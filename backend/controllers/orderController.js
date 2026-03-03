@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const mailService = require('../utils/mailService');
 
 exports.getOrders = async (req, res) => {
     const tenantId = req.tenantId;
@@ -32,7 +33,17 @@ exports.createOrder = async (req, res) => {
         }
 
         await connection.commit();
-        res.status(201).json({ success: true, data: { id: orderId } });
+
+        // Send Notifications (In a real app, you'd fetch customer/tenant emails here)
+        // For demonstration, we'll log it
+        await mailService.sendEmail(
+            'tenant@example.com', // Would be owner email
+            'New Order Received',
+            `You have received a new order #${orderId} for $${total_amount}.`,
+            `<h1>New Order!</h1><p>Order ID: #${orderId}</p><p>Total: $${total_amount}</p>`
+        );
+
+        res.status(201).json({ success: true, data: { orderId } });
     } catch (error) {
         await connection.rollback();
         res.status(500).json({ success: false, message: 'Error creating order' });

@@ -22,6 +22,7 @@ app.use('/api/v1/auth', require('./routes/authRoutes'));
 
 // Super Admin Routes
 app.use('/api/v1/admin', require('./routes/adminRoutes'));
+app.use('/api/v1/platform-settings', require('./routes/platformSettingsRoutes'));
 
 // Business Modules (Tenant Scoped)
 app.use('/api/v1/products', require('./routes/productRoutes'));

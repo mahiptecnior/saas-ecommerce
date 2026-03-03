@@ -8,6 +8,12 @@ CREATE TABLE IF NOT EXISTS tenants (
     name VARCHAR(255) NOT NULL,
     subdomain VARCHAR(100) UNIQUE NOT NULL,
     domain VARCHAR(255) UNIQUE,
+    business_name VARCHAR(255),
+    business_address TEXT,
+    business_tax_id VARCHAR(100),
+    owner_name VARCHAR(255),
+    owner_email VARCHAR(255),
+    owner_phone VARCHAR(50),
     status ENUM('active', 'suspended', 'deactivated') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -228,6 +234,14 @@ CREATE TABLE IF NOT EXISTS store_settings (
     custom_css TEXT,
     builder_layout_json JSON,
     FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+);
+
+-- 18b. Platform Settings (Global configurations like SMTP)
+CREATE TABLE IF NOT EXISTS platform_settings (
+    setting_key VARCHAR(100) PRIMARY KEY,
+    setting_value TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- 19. Audit Logs

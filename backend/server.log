@@ -1,3 +1,93 @@
-[dotenv@17.3.1] injecting env (7) from .env -- tip: ⚙️  override existing env vars with { override: true }
-[dotenv@17.3.1] injecting env (0) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.3.1] injecting env (12) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
 Server running on port 5001
+Email Error: Error: Invalid login: 535 5.7.8 Error: authentication failed: (reason unavailable)
+    at SMTPConnection._formatError (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/nodemailer/lib/smtp-connection/index.js:912:19)
+    at SMTPConnection._actionAUTHComplete (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/nodemailer/lib/smtp-connection/index.js:1722:34)
+    at SMTPConnection.<anonymous> (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/nodemailer/lib/smtp-connection/index.js:651:26)
+    at SMTPConnection._processResponse (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/nodemailer/lib/smtp-connection/index.js:1098:20)
+    at SMTPConnection._onData (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/nodemailer/lib/smtp-connection/index.js:872:14)
+    at SMTPConnection._onSocketData (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/nodemailer/lib/smtp-connection/index.js:196:44)
+    at TLSSocket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12)
+    at readableAddChunkPushByteMode (node:internal/streams/readable:512:3)
+    at Readable.push (node:internal/streams/readable:392:5) {
+  code: 'EAUTH',
+  response: '535 5.7.8 Error: authentication failed: (reason unavailable)',
+  responseCode: 535,
+  command: 'AUTH PLAIN'
+}
+Message sent: <26817774-550a-7f35-f6b2-71fc85a4eb16@localhost>
+Message sent: <c8e059db-3ffa-afa5-8a3e-b8ebb102dc40@localhost>
+Message sent: <6e622f6c-8449-bf18-858a-897813b66014@localhost>
+Message sent: <4857031a-f09b-df98-6c57-521b839223b3@localhost>
+Message sent: <95ba8f0b-4956-c85b-fcf5-09bfc30e94d0@localhost>
+Error: Unknown column 'category_id' in 'field list'
+    at PromisePool.query (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/mysql2/lib/promise/pool.js:36:22)
+    at exports.createProduct (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/controllers/productController.js:27:37)
+    at Layer.handleRequest (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/layer.js:152:17)
+    at next (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/route.js:117:3)
+    at handle (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/layer.js:152:17)
+    at /Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:295:15
+    at processParams (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:582:12)
+    at next (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:291:5) {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sql: `INSERT INTO products (tenant_id, name, description, price, sku, inventory_quantity, low_stock_threshold, tags, category_id, variants) VALUES (5, 'demo', 'demo', '100', 'asdfbn', '10', '1', '', '1', '[{\\"name\\":\\"hdhd\\",\\"value\\":\\"color\\"}]')`,
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'category_id' in 'field list'"
+}
+Error: Unknown column 'category_id' in 'field list'
+    at PromisePool.query (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/mysql2/lib/promise/pool.js:36:22)
+    at exports.createProduct (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/controllers/productController.js:27:37)
+    at Layer.handleRequest (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/layer.js:152:17)
+    at next (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/route.js:117:3)
+    at handle (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/layer.js:152:17)
+    at /Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:295:15
+    at processParams (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:582:12)
+    at next (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:291:5) {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sql: `INSERT INTO products (tenant_id, name, description, price, sku, inventory_quantity, low_stock_threshold, tags, category_id, variants) VALUES (5, 'demo', 'demo', '100', 'asdfbn', '10', '1', '', '1', '[{\\"name\\":\\"hdhd\\",\\"value\\":\\"color\\"}]')`,
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'category_id' in 'field list'"
+}
+Error: Unknown column 'category_id' in 'field list'
+    at PromisePool.query (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/mysql2/lib/promise/pool.js:36:22)
+    at exports.createProduct (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/controllers/productController.js:27:37)
+    at Layer.handleRequest (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/layer.js:152:17)
+    at next (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/route.js:117:3)
+    at handle (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/layer.js:152:17)
+    at /Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:295:15
+    at processParams (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:582:12)
+    at next (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:291:5) {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sql: `INSERT INTO products (tenant_id, name, description, price, sku, inventory_quantity, low_stock_threshold, tags, category_id, variants) VALUES (5, 'demo', 'demo', '100', 'asdfbn', '10', '1', '', '1', '[{\\"name\\":\\"hdhd\\",\\"value\\":\\"color\\"}]')`,
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'category_id' in 'field list'"
+}
+Error: Unknown column 'category_id' in 'field list'
+    at PromisePool.query (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/mysql2/lib/promise/pool.js:36:22)
+    at exports.createProduct (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/controllers/productController.js:27:37)
+    at Layer.handleRequest (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/layer.js:152:17)
+    at next (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/route.js:117:3)
+    at handle (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/lib/layer.js:152:17)
+    at /Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:295:15
+    at processParams (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:582:12)
+    at next (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/router/index.js:291:5) {
+  code: 'ER_BAD_FIELD_ERROR',
+  errno: 1054,
+  sql: `INSERT INTO products (tenant_id, name, description, price, sku, inventory_quantity, low_stock_threshold, tags, category_id, variants) VALUES (5, 'demo', 'demo', '100', 'asdfbn', '10', '1', '', '1', '[{\\"name\\":\\"hdhd\\",\\"value\\":\\"color\\"}]')`,
+  sqlState: '42S22',
+  sqlMessage: "Unknown column 'category_id' in 'field list'"
+}
+Message sent: <6aebafc9-a95b-4169-6149-62ee4e221616@localhost>

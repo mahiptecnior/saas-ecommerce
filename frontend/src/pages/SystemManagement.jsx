@@ -15,14 +15,19 @@ const SystemManagement = () => {
 
     const fetchData = async () => {
         try {
-            const [tenantsRes, modulesRes, plansRes] = await Promise.all([
+            const results = await Promise.allSettled([
                 api.get('/admin/tenants'),
                 api.get('/admin/modules'),
                 api.get('/admin/plans')
             ]);
-            setTenants(tenantsRes.data.data);
-            setModules(modulesRes.data.data);
-            setPlans(plansRes.data.data);
+
+            if (results[0].status === 'fulfilled') setTenants(results[0].value.data.data);
+            if (results[1].status === 'fulfilled') setModules(results[1].value.data.data);
+            if (results[2].status === 'fulfilled') setPlans(results[2].value.data.data);
+
+            if (results.some(r => r.status === 'rejected')) {
+                console.error("Some system API calls failed", results.filter(r => r.status === 'rejected').map(r => r.reason));
+            }
         } catch (error) {
             console.error('Error fetching data', error);
         } finally {

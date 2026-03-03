@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const logger = require('../utils/logger');
+const mailService = require('../utils/mailService');
 
 // --- Tenant Operations ---
 exports.updateTenantStatus = async (req, res) => {
@@ -21,6 +22,43 @@ exports.getModules = async (req, res) => {
         res.json({ success: true, data: rows });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error fetching modules' });
+    }
+};
+
+exports.createModule = async (req, res) => {
+    const { name, description, is_active } = req.body;
+    try {
+        const [result] = await pool.query(
+            'INSERT INTO modules (name, description, is_active) VALUES (?, ?, ?)',
+            [name, description, is_active !== undefined ? is_active : 1]
+        );
+        res.status(201).json({ success: true, data: { id: result.insertId, name, description } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error creating module' });
+    }
+};
+
+exports.updateModule = async (req, res) => {
+    const { id } = req.params;
+    const { name, description, is_active } = req.body;
+    try {
+        await pool.query(
+            'UPDATE modules SET name = ?, description = ?, is_active = ? WHERE id = ?',
+            [name, description, is_active, id]
+        );
+        res.json({ success: true, message: 'Module updated successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error updating module' });
+    }
+};
+
+exports.deleteModule = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM modules WHERE id = ?', [id]);
+        res.json({ success: true, message: 'Module deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error deleting module' });
     }
 };
 
@@ -70,6 +108,15 @@ exports.assignPlan = async (req, res) => {
         );
 
         await logger.logAction(tenantId, null, 'PLAN_ASSIGNMENT', { planId }, req.ip);
+
+        // Notify Tenant of Plan Change
+        await mailService.sendEmail(
+            'tenant@example.com', // Would be owner email
+            'Plan Updated',
+            `Your subscription plan has been updated to Plan ID: ${planId}.`,
+            `<h1>Subscription Updated</h1><p>Your subscription plan has been updated successfully.</p><p>New Plan ID: <strong>${planId}</strong></p>`
+        );
+
         res.json({ success: true, message: 'Plan assigned successfully' });
     } catch (error) {
         console.error(error);

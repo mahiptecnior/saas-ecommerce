@@ -2,6 +2,7 @@ const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const logger = require('../utils/logger');
+const mailService = require('../utils/mailService');
 
 exports.login = async (req, res) => {
     const { email, password } = req.body;
@@ -73,6 +74,15 @@ exports.register = async (req, res) => {
         );
 
         await connection.commit();
+
+        // Send Welcome Email
+        await mailService.sendEmail(
+            email,
+            'Welcome to Nazmart!',
+            `Hello ${name}, your store ${storeName} has been created successfully.`,
+            `<h1>Welcome to Nazmart!</h1><p>Hello ${name},</p><p>Your store <strong>${storeName}</strong> has been created successfully. You can access it at: http://${subdomain}.nazmart.com</p>`
+        );
+
         res.status(201).json({ success: true, message: 'Tenant registered successfully' });
     } catch (error) {
         await connection.rollback();

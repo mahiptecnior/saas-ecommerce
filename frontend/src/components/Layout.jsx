@@ -35,7 +35,11 @@ const Layout = ({ role }) => {
         { name: 'Dashboard', path: '/admin', roles: ['super_admin'] },
         { name: 'Tenants', path: '/admin/tenants', roles: ['super_admin'] },
         { name: 'Plans', path: '/admin/plans', roles: ['super_admin'] },
-        { name: 'System', path: '/admin/system', roles: ['super_admin'] },
+        { name: 'Module Features', path: '/admin/modules', roles: ['super_admin'] },
+        { name: 'Tenant Config', path: '/admin/assignments', roles: ['super_admin'] },
+        { name: 'Gateways', path: '/admin/gateways', roles: ['super_admin'] },
+        { name: 'Transactions', path: '/admin/transactions', roles: ['super_admin'] },
+        { name: 'Platform Settings', path: '/admin/platform-settings', roles: ['super_admin'] },
     ];
 
     const tenantMenu = [
@@ -57,10 +61,10 @@ const Layout = ({ role }) => {
     return (
         <div className="layout">
             <div className="sidebar">
-                <div style={{ padding: '2rem', fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--primary)' }}>
+                <div style={{ padding: '2.5rem 2rem', fontSize: '1.5rem', fontWeight: '700', fontFamily: 'Outfit, sans-serif', color: 'var(--primary)', letterSpacing: '-0.02em' }}>
                     SaaS eCommerce
                 </div>
-                <nav style={{ marginTop: '1rem' }}>
+                <nav style={{ flex: 1, padding: '0 1.25rem' }}>
                     {filteredMenu.map((item) => (
                         <Link
                             key={item.path}
@@ -68,12 +72,14 @@ const Layout = ({ role }) => {
                             className={`nav-link ${location.pathname === item.path ? 'active' : ''}`}
                             style={{
                                 display: 'block',
-                                padding: '0.75rem 2rem',
+                                padding: '0.85rem 1.25rem',
+                                margin: '0.25rem 0',
                                 textDecoration: 'none',
-                                color: location.pathname === item.path ? 'var(--primary)' : 'var(--text)',
-                                borderLeft: location.pathname === item.path ? '4px solid var(--primary)' : '4px solid transparent',
-                                backgroundColor: location.pathname === item.path ? 'var(--background)' : 'transparent',
-                                transition: 'all 0.2s'
+                                color: location.pathname === item.path ? 'var(--primary)' : 'var(--text-muted)',
+                                fontWeight: location.pathname === item.path ? '600' : '500',
+                                backgroundColor: location.pathname === item.path ? '#eef2ff' : 'transparent',
+                                borderRadius: '12px',
+                                transition: 'all 0.2s ease',
                             }}
                         >
                             {item.name}
@@ -87,10 +93,12 @@ const Layout = ({ role }) => {
                 </div>
             </div>
             <main className="main-content">
-                <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem', alignItems: 'center' }}>
-                    <h1>Welcome, {userName}</h1>
-                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                        {role === 'super_admin' ? 'Platform Administrator' : 'Store Management'}
+                <header style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2.5rem', alignItems: 'center' }}>
+                    <div>
+                        <h1 style={{ marginBottom: '0.25rem' }}>Overview</h1>
+                        <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                            {role === 'super_admin' ? 'Platform Administrator' : 'Store Management'}
+                        </div>
                     </div>
                 </header>
                 <div className="fade-in">

@@ -14,7 +14,12 @@ import ThemeBuilder from './pages/ThemeBuilder';
 import Categories from './pages/Categories';
 import SystemManagement from './pages/SystemManagement';
 import AdminDashboard from './pages/AdminDashboard';
+import PlatformSettings from './pages/PlatformSettings';
 import TenantDashboard from './pages/TenantDashboard';
+import AdminGateways from './pages/AdminGateways';
+import AdminTransactions from './pages/AdminTransactions';
+import AdminModules from './pages/AdminModules';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -23,12 +28,20 @@ function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
 
-      {/* Super Admin Protected Routes */}
-      <Route path="/admin" element={<Layout role="super_admin" />}>
+      {/* Platform Super Admin Routes */}
+      <Route path="/admin" element={
+        <ProtectedRoute allowedRoles={['super_admin']}>
+          <Layout role="super_admin" />
+        </ProtectedRoute>
+      }>
         <Route index element={<AdminDashboard />} />
         <Route path="tenants" element={<Tenants />} />
         <Route path="plans" element={<Plans />} />
-        <Route path="system" element={<SystemManagement />} />
+        <Route path="modules" element={<AdminModules />} />
+        <Route path="assignments" element={<SystemManagement />} />
+        <Route path="platform-settings" element={<PlatformSettings />} />
+        <Route path="gateways" element={<AdminGateways />} />
+        <Route path="transactions" element={<AdminTransactions />} />
       </Route>
 
       {/* Tenant Protected Routes */}

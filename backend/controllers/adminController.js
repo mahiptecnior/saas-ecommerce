@@ -1,4 +1,6 @@
 const pool = require('../config/db');
+const bcrypt = require('bcryptjs');
+
 
 exports.getTenants = async (req, res) => {
     try {
@@ -10,15 +12,36 @@ exports.getTenants = async (req, res) => {
 };
 
 exports.createTenant = async (req, res) => {
-    const { name, subdomain } = req.body;
+    const { name, subdomain, business_name, business_address, business_tax_id, owner_name, owner_email, owner_phone, password } = req.body;
+    let connection;
     try {
-        const [result] = await pool.query(
-            'INSERT INTO tenants (name, subdomain) VALUES (?, ?)',
-            [name, subdomain]
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        const [tenantResult] = await connection.query(
+            `INSERT INTO tenants 
+             (name, subdomain, business_name, business_address, business_tax_id, owner_name, owner_email, owner_phone) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [name, subdomain, business_name, business_address, business_tax_id, owner_name, owner_email, owner_phone]
         );
-        res.status(201).json({ success: true, data: { id: result.insertId, name, subdomain } });
+        const tenantId = tenantResult.insertId;
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        await connection.query(
+            'INSERT INTO users (tenant_id, name, email, password, role) VALUES (?, ?, ?, ?, ?)',
+            [tenantId, owner_name || name, owner_email, hashedPassword, 'tenant_owner']
+        );
+
+        await connection.commit();
+        res.status(201).json({ success: true, data: { id: tenantId, name, subdomain } });
     } catch (error) {
+        if (connection) await connection.rollback();
+        console.error("Create Tenant Error:", error);
         res.status(500).json({ success: false, message: 'Error creating tenant' });
+    } finally {
+        if (connection) connection.release();
     }
 };
 
@@ -40,7 +63,59 @@ exports.createPlan = async (req, res) => {
         );
         res.status(201).json({ success: true, data: { id: result.insertId, name } });
     } catch (error) {
-        res.status(501).json({ success: false, message: 'Plan creation logic not fully implemented' });
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Error creating plan' });
+    }
+};
+
+exports.updatePlan = async (req, res) => {
+    const { id } = req.params;
+    const { name, price_monthly, price_yearly, product_limit, order_limit, staff_limit, description } = req.body;
+    try {
+        await pool.query(
+            'UPDATE plans SET name = ?, price_monthly = ?, price_yearly = ?, product_limit = ?, order_limit = ?, staff_limit = ?, description = ? WHERE id = ?',
+            [name, price_monthly, price_yearly, product_limit, order_limit, staff_limit, description, id]
+        );
+        res.json({ success: true, message: 'Plan updated successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error updating plan' });
+    }
+};
+
+exports.deletePlan = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM plans WHERE id = ?', [id]);
+        res.json({ success: true, message: 'Plan deleted successfully' });
+    } catch (error) {
+        console.error("Delete Plan Error:", error);
+        res.status(500).json({ success: false, message: 'Error deleting plan' });
+    }
+};
+
+exports.updateTenant = async (req, res) => {
+    const { id } = req.params;
+    const { name, subdomain, status, business_name, business_address, business_tax_id, owner_name, owner_email, owner_phone } = req.body;
+    try {
+        await pool.query(
+            'UPDATE tenants SET name = ?, subdomain = ?, status = ?, business_name = ?, business_address = ?, business_tax_id = ?, owner_name = ?, owner_email = ?, owner_phone = ? WHERE id = ?',
+            [name, subdomain, status, business_name, business_address, business_tax_id, owner_name, owner_email, owner_phone, id]
+        );
+        res.json({ success: true, message: 'Tenant updated successfully' });
+    } catch (error) {
+        console.error("Update Tenant Error:", error);
+        res.status(500).json({ success: false, message: 'Error updating tenant' });
+    }
+};
+
+exports.deleteTenant = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM tenants WHERE id = ?', [id]);
+        res.json({ success: true, message: 'Tenant deleted successfully' });
+    } catch (error) {
+        console.error("Delete Tenant Error:", error);
+        res.status(500).json({ success: false, message: 'Error deleting tenant' });
     }
 };
 
