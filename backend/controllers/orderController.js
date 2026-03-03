@@ -15,6 +15,37 @@ exports.createOrder = async (req, res) => {
     const tenantId = req.tenantId;
     const { customer_id, total_amount, items } = req.body;
 
+    // Enforce order limits based on active subscription
+    try {
+        const [planInfo] = await pool.query(
+            `SELECT p.order_limit 
+             FROM subscriptions s
+             JOIN plans p ON s.plan_id = p.id
+             WHERE s.tenant_id = ? AND s.status = 'active'
+             LIMIT 1`,
+            [tenantId]
+        );
+
+        if (planInfo.length > 0) {
+            const limit = planInfo[0].order_limit;
+            if (limit !== -1) {
+                // Check current order count
+                const [countInfo] = await pool.query('SELECT COUNT(*) as currentCount FROM orders WHERE tenant_id = ?', [tenantId]);
+                const currentCount = countInfo[0].currentCount;
+
+                if (currentCount >= limit) {
+                    return res.status(403).json({
+                        success: false,
+                        errorCode: 'LIMIT_REACHED',
+                        message: `Order limit reached. Your plan allows a maximum of ${limit} orders.`
+                    });
+                }
+            }
+        }
+    } catch (err) {
+        return res.status(500).json({ success: false, message: 'Error checking order limits' });
+    }
+
     const connection = await pool.getConnection();
     try {
         await connection.beginTransaction();

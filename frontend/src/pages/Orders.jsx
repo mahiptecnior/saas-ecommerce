@@ -1,13 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
+import { useNavigate } from 'react-router-dom';
 
 const Orders = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Limits & Upgrades
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [limitMsg, setLimitMsg] = useState('');
+    const navigate = useNavigate();
+
     useEffect(() => {
         fetchOrders();
     }, []);
+
+    const handleCreateMockOrder = async () => {
+        try {
+            await api.post('/orders', {
+                customer_id: 1,
+                total_amount: '99.99',
+                items: [{ product_id: 1, quantity: 1, unit_price: '99.99' }]
+            });
+            fetchOrders();
+            alert('Mock Order created successfully!');
+        } catch (error) {
+            if (error.response && error.response.status === 403 && error.response.data.errorCode === 'LIMIT_REACHED') {
+                setLimitMsg(error.response.data.message);
+                setShowUpgradeModal(true);
+            } else {
+                console.error('Error creating order', error);
+                alert('Failed to create mock order. Ensure a product exists with ID 1.');
+            }
+        }
+    };
 
     const handleRefund = async (id) => {
         if (window.confirm('Are you sure you want to refund this order?')) {
@@ -54,8 +80,11 @@ const Orders = () => {
         <div className="fade-in">
             <div className="card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <h2>Sales & Orders</h2>
-                    <span className="text-muted">{orders.length} total orders</span>
+                    <div>
+                        <h2>Sales & Orders</h2>
+                        <span className="text-muted">{orders.length} total orders</span>
+                    </div>
+                    <button className="btn btn-primary" onClick={handleCreateMockOrder}>Mock New Order (Test Limits)</button>
                 </div>
 
                 <table className="table">
@@ -118,6 +147,28 @@ const Orders = () => {
                     </tbody>
                 </table>
             </div>
+
+            {/* Upgrade Plan Modal */}
+            {showUpgradeModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, backdropFilter: 'blur(3px)'
+                }}>
+                    <div className="card animate-fade-in" style={{ width: '450px', textAlign: 'center', padding: '2rem' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
+                        <h3 style={{ marginBottom: '1rem', color: 'var(--text)' }}>Limit Reached</h3>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.5' }}>
+                            {limitMsg || "You have reached the maximum allowance for your current subscription plan."}
+                        </p>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                            <button type="button" className="btn btn-outline" onClick={() => setShowUpgradeModal(false)}>Close</button>
+                            <button type="button" className="btn btn-primary" onClick={() => navigate('/tenant/billing')}>
+                                Upgrade Plan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
+import { useNavigate } from 'react-router-dom';
 
 const Products = () => {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+
+    // Limits & Upgrades
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [limitMsg, setLimitMsg] = useState('');
+    const navigate = useNavigate();
+
     const [newProduct, setNewProduct] = useState({
         name: '',
         description: '',
@@ -45,7 +52,14 @@ const Products = () => {
             setShowModal(false);
             setNewProduct({ name: '', description: '', price: '', sku: '', inventory_quantity: 0, low_stock_threshold: 5, tags: '', category_id: '', variants: [] });
         } catch (error) {
-            console.error('Error creating product', error);
+            if (error.response && error.response.status === 403 && error.response.data.errorCode === 'LIMIT_REACHED') {
+                setShowModal(false);
+                setLimitMsg(error.response.data.message);
+                setShowUpgradeModal(true);
+            } else {
+                console.error('Error creating product', error);
+                alert('Failed to create product. Please try again.');
+            }
         }
     };
 
@@ -177,6 +191,28 @@ const Products = () => {
                                 <button type="button" className="btn" style={{ flex: 1, backgroundColor: 'var(--border)' }} onClick={() => setShowModal(false)}>Cancel</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Upgrade Plan Modal */}
+            {showUpgradeModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                    backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, backdropFilter: 'blur(3px)'
+                }}>
+                    <div className="card animate-fade-in" style={{ width: '450px', textAlign: 'center', padding: '2rem' }}>
+                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
+                        <h3 style={{ marginBottom: '1rem', color: 'var(--text)' }}>Limit Reached</h3>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', lineHeight: '1.5' }}>
+                            {limitMsg || "You have reached the maximum allowance for your current subscription plan."}
+                        </p>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                            <button type="button" className="btn btn-outline" onClick={() => setShowUpgradeModal(false)}>Close</button>
+                            <button type="button" className="btn btn-primary" onClick={() => navigate('/tenant/billing')}>
+                                Upgrade Plan
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

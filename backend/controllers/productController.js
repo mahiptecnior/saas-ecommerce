@@ -24,6 +24,33 @@ exports.createProduct = async (req, res) => {
     }
 
     try {
+        // Enforce product limits based on active subscription
+        const [planInfo] = await pool.query(
+            `SELECT p.product_limit 
+             FROM subscriptions s
+             JOIN plans p ON s.plan_id = p.id
+             WHERE s.tenant_id = ? AND s.status = 'active'
+             LIMIT 1`,
+            [tenantId]
+        );
+
+        if (planInfo.length > 0) {
+            const limit = planInfo[0].product_limit;
+            if (limit !== -1) {
+                // Check current product count
+                const [countInfo] = await pool.query('SELECT COUNT(*) as currentCount FROM products WHERE tenant_id = ?', [tenantId]);
+                const currentCount = countInfo[0].currentCount;
+
+                if (currentCount >= limit) {
+                    return res.status(403).json({
+                        success: false,
+                        errorCode: 'LIMIT_REACHED',
+                        message: `Product limit reached. Your plan allows a maximum of ${limit} products.`
+                    });
+                }
+            }
+        }
+
         const [result] = await pool.query(
             'INSERT INTO products (tenant_id, name, description, price, sku, inventory_quantity, low_stock_threshold, tags, category_id, variants) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [tenantId, name, description, price, sku, inventory_quantity || 0, low_stock_threshold || 5, tags, category_id || null, variants ? JSON.stringify(variants) : null]

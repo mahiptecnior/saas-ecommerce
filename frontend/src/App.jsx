@@ -1,6 +1,8 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
+import Landing from './pages/public/Landing';
+import Register from './pages/public/Register';
 import Layout from './components/Layout';
 import Tenants from './pages/Tenants';
 import Products from './pages/Products';
@@ -26,6 +28,9 @@ function App() {
 
   return (
     <Routes>
+      {/* Public Pages */}
+      <Route path="/" element={<Landing />} />
+      <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
 
       {/* Platform Super Admin Routes */}
@@ -56,8 +61,8 @@ function App() {
         <Route path="builder" element={<ThemeBuilder />} />
         <Route path="settings" element={<Settings />} />
       </Route>
-
-      <Route path="/" element={<Navigate to="/login" />} />
+      {/* Fallback route */}
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 }

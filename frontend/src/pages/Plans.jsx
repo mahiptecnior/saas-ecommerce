@@ -193,20 +193,32 @@ const Plans = () => {
                                     <input className="input-field" type="number" step="0.01" value={priceYearly} onChange={(e) => setPriceYearly(e.target.value)} required />
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: '500' }}>Product Limit</label>
-                                    <input className="input-field" type="number" value={productLimit} onChange={(e) => setProductLimit(e.target.value)} title="-1 for unlimited" />
+                                    <div style={{ position: 'relative' }}>
+                                        <input className="input-field" type="number" value={productLimit} onChange={(e) => setProductLimit(e.target.value)} title="-1 for unlimited" style={{ paddingRight: '3rem' }} />
+                                        {productLimit === '-1' && <span style={{ position: 'absolute', right: '10px', top: '10px', fontSize: '0.7rem', color: 'var(--text-muted)', background: 'var(--surface)', padding: '2px 4px', borderRadius: '4px' }}>∞</span >}
+                                    </div>
+                                    <small className="text-muted" style={{ fontSize: '0.7rem' }}>-1 for unlimited</small>
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: '500' }}>Order Limit</label>
-                                    <input className="input-field" type="number" value={orderLimit} onChange={(e) => setOrderLimit(e.target.value)} title="-1 for unlimited" />
+                                    <div style={{ position: 'relative' }}>
+                                        <input className="input-field" type="number" value={orderLimit} onChange={(e) => setOrderLimit(e.target.value)} title="-1 for unlimited" style={{ paddingRight: '3rem' }} />
+                                        {orderLimit === '-1' && <span style={{ position: 'absolute', right: '10px', top: '10px', fontSize: '0.7rem', color: 'var(--text-muted)', background: 'var(--surface)', padding: '2px 4px', borderRadius: '4px' }}>∞</span >}
+                                    </div>
+                                    <small className="text-muted" style={{ fontSize: '0.7rem' }}>-1 for unlimited</small>
                                 </div>
                                 <div>
-                                    <input className="input-field" type="number" value={staffLimit} onChange={(e) => setStaffLimit(e.target.value)} title="-1 for unlimited" />
+                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: '500' }}>Staff Limit</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <input className="input-field" type="number" value={staffLimit} onChange={(e) => setStaffLimit(e.target.value)} title="-1 for unlimited" style={{ paddingRight: '3rem' }} />
+                                        {staffLimit === '-1' && <span style={{ position: 'absolute', right: '10px', top: '10px', fontSize: '0.7rem', color: 'var(--text-muted)', background: 'var(--surface)', padding: '2px 4px', borderRadius: '4px' }}>∞</span >}
+                                    </div>
+                                    <small className="text-muted" style={{ fontSize: '0.7rem' }}>-1 for unlimited</small>
                                 </div>
                             </div>
-
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: '500' }}>Features / Modules Included</label>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px', backgroundColor: 'var(--background)' }}>
