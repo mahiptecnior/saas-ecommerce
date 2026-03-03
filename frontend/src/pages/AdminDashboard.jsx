@@ -3,52 +3,75 @@ import api from '../api/axios';
 
 const AdminDashboard = () => {
     const [stats, setStats] = useState({
-        tenants: 0,
-        plans: 0,
-        revenue: '12,450.00' // Placeholder for now
+        totalTenants: 0,
+        activeTenants: 0,
+        totalRevenue: 0,
+        monthlySales: 0,
+        platformCommission: 0,
+        subscriptionStatus: '...'
     });
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const tenantsRes = await api.get('/admin/tenants');
-                const plansRes = await api.get('/admin/plans');
-                setStats(prev => ({
-                    ...prev,
-                    tenants: tenantsRes.data.data.length,
-                    plans: plansRes.data.data.length
-                }));
-            } catch (err) {
-                console.error('Error fetching admin stats', err);
-            }
-        };
         fetchStats();
     }, []);
 
+    const fetchStats = async () => {
+        try {
+            const res = await api.get('/admin/analytics');
+            setStats(res.data.data);
+        } catch (error) {
+            console.error('Error fetching admin analytics', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
-        <div className="animate-fade-in">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+        <div className="fade-in">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                 <div className="card">
-                    <p className="text-muted" style={{ fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>TOTAL TENANTS</p>
-                    <h2 style={{ fontSize: '2rem' }}>{stats.tenants}</h2>
+                    <p style={{ color: 'var(--text-muted)' }}>Total Tenants</p>
+                    <h2>{stats.totalTenants}</h2>
                 </div>
                 <div className="card">
-                    <p className="text-muted" style={{ fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>ACTIVE PLANS</p>
-                    <h2 style={{ fontSize: '2rem' }}>{stats.plans}</h2>
+                    <p style={{ color: 'var(--text-muted)' }}>Active Tenants</p>
+                    <h2 style={{ color: 'var(--success)' }}>{stats.activeTenants}</h2>
                 </div>
                 <div className="card">
-                    <p className="text-muted" style={{ fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>TOTAL REVENUE</p>
-                    <h2 style={{ fontSize: '2rem' }}>${stats.revenue}</h2>
-                    <span style={{ color: 'var(--success)', fontSize: '0.875rem', fontWeight: '600' }}>+12% from last month</span>
+                    <p style={{ color: 'var(--text-muted)' }}>Total Platform Revenue</p>
+                    <h2 style={{ color: 'var(--primary)' }}>${stats.totalRevenue.toLocaleString()}</h2>
+                </div>
+                <div className="card">
+                    <p style={{ color: 'var(--text-muted)' }}>Monthly Sales</p>
+                    <h2>${stats.monthlySales.toLocaleString()}</h2>
                 </div>
             </div>
 
-            <div className="card">
-                <h3>System Overview</h3>
-                <p className="text-muted">Quick actions for platform management.</p>
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                    <button className="btn btn-primary" onClick={() => window.location.href = '/admin/tenants'}>Manage Tenants</button>
-                    <button className="btn" style={{ background: '#f1f5f9', color: 'var(--text)' }} onClick={() => window.location.href = '/admin/plans'}>View Plans</button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
+                <div className="card">
+                    <h3>Platform Commission (5%)</h3>
+                    <h1 style={{ fontSize: '3rem', color: 'var(--primary)', margin: '1rem 0' }}>
+                        ${stats.platformCommission.toLocaleString()}
+                    </h1>
+                    <p>Calculated across all non-cancelled orders.</p>
+                </div>
+                <div className="card">
+                    <h3>System Health</h3>
+                    <div style={{ marginTop: '1.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                            <span>API Status</span>
+                            <span style={{ color: 'var(--success)' }}>Operational</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                            <span>DB Connection</span>
+                            <span style={{ color: 'var(--success)' }}>Healthy</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                            <span>Subscription Engine</span>
+                            <span style={{ color: 'var(--success)' }}>{stats.subscriptionStatus}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

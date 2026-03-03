@@ -1,6 +1,7 @@
 const pool = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const logger = require('../utils/logger');
 
 exports.login = async (req, res) => {
     const { email, password } = req.body;
@@ -22,6 +23,8 @@ exports.login = async (req, res) => {
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
+
+        await logger.logAction(user.tenant_id, user.id, 'LOGIN', { email: user.email }, req.ip);
 
         res.json({
             success: true,

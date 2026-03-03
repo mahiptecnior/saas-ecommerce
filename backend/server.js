@@ -26,6 +26,9 @@ app.use('/api/v1/admin', require('./routes/adminRoutes'));
 // Business Modules (Tenant Scoped)
 app.use('/api/v1/products', require('./routes/productRoutes'));
 app.use('/api/v1/orders', require('./routes/orderRoutes'));
+app.use('/api/v1/modules', require('./routes/moduleRoutes'));
+app.use('/api/v1/categories', require('./routes/categoryRoutes'));
+app.use('/api/v1/settings', require('./routes/settingsRoutes'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

@@ -1,4 +1,5 @@
 const pool = require('../config/db');
+const logger = require('../utils/logger');
 
 exports.getProducts = async (req, res) => {
     const tenantId = req.tenantId;
@@ -16,7 +17,7 @@ exports.getProducts = async (req, res) => {
 
 exports.createProduct = async (req, res) => {
     const tenantId = req.tenantId;
-    const { name, description, price, sku } = req.body;
+    const { name, description, price, sku, inventory_quantity, low_stock_threshold, tags, category_id, variants } = req.body;
 
     if (!tenantId) {
         return res.status(400).json({ success: false, message: 'Tenant context missing' });
@@ -24,11 +25,14 @@ exports.createProduct = async (req, res) => {
 
     try {
         const [result] = await pool.query(
-            'INSERT INTO products (tenant_id, name, description, price, sku) VALUES (?, ?, ?, ?, ?)',
-            [tenantId, name, description, price, sku]
+            'INSERT INTO products (tenant_id, name, description, price, sku, inventory_quantity, low_stock_threshold, tags, category_id, variants) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [tenantId, name, description, price, sku, inventory_quantity || 0, low_stock_threshold || 5, tags, category_id || null, variants ? JSON.stringify(variants) : null]
         );
-        res.status(201).json({ success: true, data: { id: result.insertId, name } });
+        const productId = result.insertId;
+        await logger.logAction(tenantId, req.userId, 'PRODUCT_CREATE', { productId, name }, req.ip);
+        res.status(201).json({ success: true, data: { id: productId, name } });
     } catch (error) {
+        console.error(error);
         res.status(500).json({ success: false, message: 'Error creating product' });
     }
 };
@@ -49,12 +53,12 @@ exports.getProduct = async (req, res) => {
 exports.updateProduct = async (req, res) => {
     const tenantId = req.tenantId;
     const { id } = req.params;
-    const { name, description, price, sku } = req.body;
+    const { name, description, price, sku, inventory_quantity, low_stock_threshold, tags, status, category_id, variants } = req.body;
 
     try {
         await pool.query(
-            'UPDATE products SET name = ?, description = ?, price = ?, sku = ? WHERE id = ? AND tenant_id = ?',
-            [name, description, price, sku, id, tenantId]
+            'UPDATE products SET name = ?, description = ?, price = ?, sku = ?, inventory_quantity = ?, low_stock_threshold = ?, tags = ?, status = ?, category_id = ?, variants = ? WHERE id = ? AND tenant_id = ?',
+            [name, description, price, sku, inventory_quantity, low_stock_threshold, tags, status, category_id || null, variants ? JSON.stringify(variants) : null, id, tenantId]
         );
         res.json({ success: true, message: 'Product updated' });
     } catch (error) {
@@ -68,6 +72,7 @@ exports.deleteProduct = async (req, res) => {
 
     try {
         await pool.query('DELETE FROM products WHERE id = ? AND tenant_id = ?', [id, tenantId]);
+        await logger.logAction(tenantId, req.userId, 'PRODUCT_DELETE', { productId: id }, req.ip);
         res.json({ success: true, message: 'Product deleted' });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error deleting product' });
