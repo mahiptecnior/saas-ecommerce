@@ -1,0 +1,68 @@
+const pool = require('../config/db');
+
+exports.getOrders = async (req, res) => {
+    const tenantId = req.tenantId;
+    try {
+        const [rows] = await pool.query('SELECT * FROM orders WHERE tenant_id = ? ORDER BY created_at DESC', [tenantId]);
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error fetching orders' });
+    }
+};
+
+exports.createOrder = async (req, res) => {
+    const tenantId = req.tenantId;
+    const { customer_id, total_amount, items } = req.body;
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const [orderResult] = await connection.query(
+            'INSERT INTO orders (tenant_id, customer_id, total_amount, status) VALUES (?, ?, ?, ?)',
+            [tenantId, customer_id, total_amount, 'pending']
+        );
+        const orderId = orderResult.insertId;
+
+        for (const item of items) {
+            await connection.query(
+                'INSERT INTO order_items (tenant_id, order_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?, ?)',
+                [tenantId, orderId, item.product_id, item.quantity, item.unit_price]
+            );
+        }
+
+        await connection.commit();
+        res.status(201).json({ success: true, data: { id: orderId } });
+    } catch (error) {
+        await connection.rollback();
+        res.status(500).json({ success: false, message: 'Error creating order' });
+    } finally {
+        connection.release();
+    }
+};
+
+exports.getOrder = async (req, res) => {
+    const tenantId = req.tenantId;
+    const { id } = req.params;
+    try {
+        const [orders] = await pool.query('SELECT * FROM orders WHERE id = ? AND tenant_id = ?', [id, tenantId]);
+        if (orders.length === 0) return res.status(404).json({ success: false, message: 'Order not found' });
+
+        const [items] = await pool.query('SELECT * FROM order_items WHERE order_id = ? AND tenant_id = ?', [id, tenantId]);
+        res.json({ success: true, data: { ...orders[0], items } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error fetching order' });
+    }
+};
+
+exports.updateOrderStatus = async (req, res) => {
+    const tenantId = req.tenantId;
+    const { id } = req.params;
+    const { status } = req.body;
+    try {
+        await pool.query('UPDATE orders SET status = ? WHERE id = ? AND tenant_id = ?', [status, id, tenantId]);
+        res.json({ success: true, message: 'Order status updated' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error updating status' });
+    }
+};
