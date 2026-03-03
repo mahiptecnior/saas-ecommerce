@@ -47,38 +47,80 @@ exports.createTenant = async (req, res) => {
 
 exports.getPlans = async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT * FROM plans');
-        res.json({ success: true, data: rows });
+        const [plans] = await pool.query('SELECT * FROM plans');
+        const [planModules] = await pool.query('SELECT * FROM plan_modules');
+
+        const plansWithModules = plans.map(plan => {
+            return {
+                ...plan,
+                modules: planModules.filter(pm => pm.plan_id === plan.id).map(pm => pm.module_id)
+            };
+        });
+
+        res.json({ success: true, data: plansWithModules });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error fetching plans' });
     }
 };
 
 exports.createPlan = async (req, res) => {
-    const { name, price_monthly, price_yearly, product_limit, order_limit, staff_limit } = req.body;
+    const { name, price_monthly, price_yearly, product_limit, order_limit, staff_limit, moduleIds } = req.body;
+    let connection;
     try {
-        const [result] = await pool.query(
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        const [result] = await connection.query(
             'INSERT INTO plans (name, price_monthly, price_yearly, product_limit, order_limit, staff_limit) VALUES (?, ?, ?, ?, ?, ?)',
             [name, price_monthly, price_yearly, product_limit || -1, order_limit || -1, staff_limit || -1]
         );
-        res.status(201).json({ success: true, data: { id: result.insertId, name } });
+        const planId = result.insertId;
+
+        if (moduleIds && Array.isArray(moduleIds) && moduleIds.length > 0) {
+            const values = moduleIds.map(mid => [planId, mid]);
+            await connection.query('INSERT INTO plan_modules (plan_id, module_id) VALUES ?', [values]);
+        }
+
+        await connection.commit();
+        res.status(201).json({ success: true, data: { id: planId, name } });
     } catch (error) {
+        if (connection) await connection.rollback();
         console.error(error);
         res.status(500).json({ success: false, message: 'Error creating plan' });
+    } finally {
+        if (connection) connection.release();
     }
 };
 
 exports.updatePlan = async (req, res) => {
     const { id } = req.params;
-    const { name, price_monthly, price_yearly, product_limit, order_limit, staff_limit, description } = req.body;
+    const { name, price_monthly, price_yearly, product_limit, order_limit, staff_limit, description, moduleIds } = req.body;
+    let connection;
     try {
-        await pool.query(
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        await connection.query(
             'UPDATE plans SET name = ?, price_monthly = ?, price_yearly = ?, product_limit = ?, order_limit = ?, staff_limit = ?, description = ? WHERE id = ?',
             [name, price_monthly, price_yearly, product_limit, order_limit, staff_limit, description, id]
         );
+
+        if (moduleIds && Array.isArray(moduleIds)) {
+            await connection.query('DELETE FROM plan_modules WHERE plan_id = ?', [id]);
+            if (moduleIds.length > 0) {
+                const values = moduleIds.map(mid => [id, mid]);
+                await connection.query('INSERT INTO plan_modules (plan_id, module_id) VALUES ?', [values]);
+            }
+        }
+
+        await connection.commit();
         res.json({ success: true, message: 'Plan updated successfully' });
     } catch (error) {
+        if (connection) await connection.rollback();
+        console.error(error);
         res.status(500).json({ success: false, message: 'Error updating plan' });
+    } finally {
+        if (connection) connection.release();
     }
 };
 

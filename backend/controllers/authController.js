@@ -89,6 +89,35 @@ exports.register = async (req, res) => {
         console.error(error);
         res.status(500).json({ success: false, message: 'Registration failed' });
     } finally {
-        connection.release();
+        if (connection) connection.release();
+    }
+};
+
+exports.updateProfile = async (req, res) => {
+    const userId = req.user ? req.user.id : req.body.id;
+    if (!userId) {
+        return res.status(401).json({ success: false, message: 'Unauthorized. User ID not found.' });
+    }
+
+    const { name, email, password } = req.body;
+    let query = 'UPDATE users SET name = ?, email = ?';
+    let params = [name, email];
+
+    try {
+        if (password && password.trim() !== '') {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            query += ', password = ?';
+            params.push(hashedPassword);
+        }
+
+        query += ' WHERE id = ?';
+        params.push(userId);
+
+        await pool.query(query, params);
+
+        res.json({ success: true, message: 'Profile updated successfully' });
+    } catch (error) {
+        console.error('Update Profile Error:', error);
+        res.status(500).json({ success: false, message: 'Error updating profile' });
     }
 };

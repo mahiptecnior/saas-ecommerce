@@ -16,8 +16,13 @@ const Plans = () => {
     const [orderLimit, setOrderLimit] = useState('-1');
     const [staffLimit, setStaffLimit] = useState('-1');
 
+    // Modules state
+    const [availableModules, setAvailableModules] = useState([]);
+    const [selectedModules, setSelectedModules] = useState([]);
+
     useEffect(() => {
         fetchPlans();
+        fetchModules();
     }, []);
 
     const fetchPlans = async () => {
@@ -26,6 +31,15 @@ const Plans = () => {
             setPlans(data.data);
         } catch (err) {
             console.error('Error fetching plans', err);
+        }
+    };
+
+    const fetchModules = async () => {
+        try {
+            const { data } = await api.get('/admin/modules');
+            setAvailableModules(data.data);
+        } catch (err) {
+            console.error('Error fetching modules', err);
         }
     };
 
@@ -39,6 +53,7 @@ const Plans = () => {
         setProductLimit('-1');
         setOrderLimit('-1');
         setStaffLimit('-1');
+        setSelectedModules([]);
         setIsModalOpen(true);
     };
 
@@ -52,6 +67,7 @@ const Plans = () => {
         setProductLimit(plan.product_limit);
         setOrderLimit(plan.order_limit);
         setStaffLimit(plan.staff_limit);
+        setSelectedModules(plan.modules || []);
         setIsModalOpen(true);
     };
 
@@ -63,7 +79,8 @@ const Plans = () => {
         e.preventDefault();
         const payload = {
             name, description, price_monthly: priceMonthly, price_yearly: priceYearly,
-            product_limit: productLimit, order_limit: orderLimit, staff_limit: staffLimit
+            product_limit: productLimit, order_limit: orderLimit, staff_limit: staffLimit,
+            moduleIds: selectedModules
         };
 
         try {
@@ -117,12 +134,31 @@ const Plans = () => {
                             <span className="text-muted"> / yr</span>
                         </div>
                         <ul style={{ listStyle: 'none', padding: 0, fontSize: '0.9rem' }}>
-                            <li style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center' }}>
-                                <span style={{ color: 'var(--success)', marginRight: '0.5rem' }}>✓</span> Core Modules
-                            </li>
+
                             <li style={{ marginBottom: '0.5rem' }}>📦 <strong>{plan.product_limit === -1 ? 'Unlimited' : plan.product_limit}</strong> Products</li>
                             <li style={{ marginBottom: '0.5rem' }}>🛒 <strong>{plan.order_limit === -1 ? 'Unlimited' : plan.order_limit}</strong> Orders</li>
                             <li style={{ marginBottom: '0.5rem' }}>👥 <strong>{plan.staff_limit === -1 ? 'Unlimited' : plan.staff_limit}</strong> Staff</li>
+
+                            {/* Dynamic Modules List */}
+                            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                                <p style={{ fontSize: '0.8rem', fontWeight: '600', color: 'var(--text-muted)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Features</p>
+                                {availableModules.map(mod => {
+                                    const isAssigned = plan.modules && plan.modules.includes(mod.id);
+                                    return (
+                                        <li key={mod.id} style={{ marginBottom: '0.25rem', display: 'flex', alignItems: 'center', fontSize: '0.85rem' }}>
+                                            {isAssigned ? (
+                                                <span style={{ color: 'var(--success)', marginRight: '0.5rem', fontWeight: 'bold', width: '16px', display: 'inline-block' }}>✓</span>
+                                            ) : (
+                                                <span style={{ color: 'var(--danger)', marginRight: '0.5rem', fontWeight: 'bold', width: '16px', display: 'inline-block' }}>✕</span>
+                                            )}
+                                            <span style={{ color: isAssigned ? 'inherit' : 'var(--text-muted)' }}>
+                                                {mod.name.charAt(0).toUpperCase() + mod.name.slice(1)}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
+                            </div>
+
                             {plan.description && <li style={{ marginTop: '1rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>{plan.description}</li>}
                         </ul>
                     </div>
@@ -167,10 +203,33 @@ const Plans = () => {
                                     <input className="input-field" type="number" value={orderLimit} onChange={(e) => setOrderLimit(e.target.value)} title="-1 for unlimited" />
                                 </div>
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: '500' }}>Staff Limit</label>
                                     <input className="input-field" type="number" value={staffLimit} onChange={(e) => setStaffLimit(e.target.value)} title="-1 for unlimited" />
                                 </div>
                             </div>
+
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: '500' }}>Features / Modules Included</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px', backgroundColor: 'var(--background)' }}>
+                                    {availableModules.map(mod => (
+                                        <label key={mod.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', cursor: 'pointer' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedModules.includes(mod.id)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedModules([...selectedModules, mod.id]);
+                                                    } else {
+                                                        setSelectedModules(selectedModules.filter(id => id !== mod.id));
+                                                    }
+                                                }}
+                                            />
+                                            {mod.name.charAt(0).toUpperCase() + mod.name.slice(1)}
+                                        </label>
+                                    ))}
+                                    {availableModules.length === 0 && <span className="text-muted" style={{ fontSize: '0.8rem' }}>No modules available. Create them in Module Features.</span>}
+                                </div>
+                            </div>
+
                             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
                                 <button type="button" className="btn btn-outline" onClick={closeModal}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">{editMode ? 'Save Changes' : 'Create Plan'}</button>

@@ -54,11 +54,26 @@ exports.updateModule = async (req, res) => {
 
 exports.deleteModule = async (req, res) => {
     const { id } = req.params;
+    let connection;
     try {
-        await pool.query('DELETE FROM modules WHERE id = ?', [id]);
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        // Remove foreign key references first
+        await connection.query('DELETE FROM plan_modules WHERE module_id = ?', [id]);
+        await connection.query('DELETE FROM tenant_modules WHERE module_id = ?', [id]);
+
+        // Then delete the module
+        await connection.query('DELETE FROM modules WHERE id = ?', [id]);
+
+        await connection.commit();
         res.json({ success: true, message: 'Module deleted successfully' });
     } catch (error) {
+        if (connection) await connection.rollback();
+        console.error("Delete Module Error:", error);
         res.status(500).json({ success: false, message: 'Error deleting module' });
+    } finally {
+        if (connection) connection.release();
     }
 };
 
@@ -97,29 +112,47 @@ exports.removeModuleFromTenant = async (req, res) => {
 
 exports.assignPlan = async (req, res) => {
     const { tenantId, planId } = req.body;
+    let connection;
     try {
-        // In a real app, this might create a new entry in 'subscriptions' table
-        // We'll update the subscription OR just log it for now if we don't have a direct 'plan_id' on tenants table (it's in subscriptions)
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
 
-        await pool.query(
+        // 1. Assign Subscription
+        await connection.query(
             'INSERT INTO subscriptions (tenant_id, plan_id, billing_cycle, start_date, end_date) VALUES (?, ?, ?, CURDATE(), DATE_ADD(CURDATE(), INTERVAL 1 MONTH)) ' +
             'ON DUPLICATE KEY UPDATE plan_id = ?, updated_at = CURRENT_TIMESTAMP',
             [tenantId, planId, 'monthly', planId]
         );
 
+        // 2. Clear old tenant modules
+        await connection.query('DELETE FROM tenant_modules WHERE tenant_id = ?', [tenantId]);
+
+        // 3. Fetch modules for the new plan and assign them
+        const [planModules] = await connection.query('SELECT module_id FROM plan_modules WHERE plan_id = ?', [planId]);
+
+        if (planModules.length > 0) {
+            const moduleValues = planModules.map(pm => [tenantId, pm.module_id]);
+            await connection.query('INSERT IGNORE INTO tenant_modules (tenant_id, module_id) VALUES ?', [moduleValues]);
+        }
+
+        await connection.commit();
+
         await logger.logAction(tenantId, null, 'PLAN_ASSIGNMENT', { planId }, req.ip);
 
-        // Notify Tenant of Plan Change
+        // Notify Tenant of Plan Change (mocked email for now)
         await mailService.sendEmail(
-            'tenant@example.com', // Would be owner email
+            'tenant@example.com',
             'Plan Updated',
             `Your subscription plan has been updated to Plan ID: ${planId}.`,
             `<h1>Subscription Updated</h1><p>Your subscription plan has been updated successfully.</p><p>New Plan ID: <strong>${planId}</strong></p>`
         );
 
-        res.json({ success: true, message: 'Plan assigned successfully' });
+        res.json({ success: true, message: 'Plan assigned and modules provisioned successfully' });
     } catch (error) {
-        console.error(error);
+        if (connection) await connection.rollback();
+        console.error("Assign Plan Error:", error);
         res.status(500).json({ success: false, message: 'Error assigning plan' });
+    } finally {
+        if (connection) connection.release();
     }
 };

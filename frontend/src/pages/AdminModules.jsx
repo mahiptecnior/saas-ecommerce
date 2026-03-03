@@ -12,6 +12,10 @@ const AdminModules = () => {
     const [description, setDescription] = useState('');
     const [isActive, setIsActive] = useState(true);
 
+    // Delete modal state
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [moduleToDelete, setModuleToDelete] = useState(null);
+
     useEffect(() => {
         fetchModules();
     }, []);
@@ -64,14 +68,24 @@ const AdminModules = () => {
         }
     };
 
-    const handleDelete = async (moduleId) => {
-        if (window.confirm('Are you sure you want to delete this module? This might break permissions if tenants are currently assigned to it.')) {
-            try {
-                await api.delete(`/admin/modules/${moduleId}`);
-                fetchModules();
-            } catch (err) {
-                alert('Error deleting module');
-            }
+    const openDeleteModal = (mod) => {
+        setModuleToDelete(mod);
+        setIsDeleteModalOpen(true);
+    };
+
+    const closeDeleteModal = () => {
+        setIsDeleteModalOpen(false);
+        setModuleToDelete(null);
+    };
+
+    const confirmDelete = async () => {
+        if (!moduleToDelete) return;
+        try {
+            await api.delete(`/admin/modules/${moduleToDelete.id}`);
+            fetchModules();
+            closeDeleteModal();
+        } catch (err) {
+            alert('Error deleting module');
         }
     };
 
@@ -90,7 +104,7 @@ const AdminModules = () => {
                     <div key={mod.id} className="card" style={{ borderTop: `4px solid ${mod.is_active ? 'var(--primary)' : 'var(--text-muted)'}`, position: 'relative' }}>
                         <div style={{ position: 'absolute', top: '1rem', right: '1rem', display: 'flex', gap: '0.5rem' }}>
                             <button onClick={() => openEditModal(mod)} className="btn btn-outline" style={{ padding: '4px 12px', fontSize: '12px' }}>Edit</button>
-                            <button onClick={() => handleDelete(mod.id)} className="btn btn-danger" style={{ padding: '4px 12px', fontSize: '12px' }}>Delete</button>
+                            <button onClick={() => openDeleteModal(mod)} className="btn btn-danger" style={{ padding: '4px 12px', fontSize: '12px' }}>Delete</button>
                         </div>
                         <h4 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', textTransform: 'capitalize', width: '65%' }}>{mod.name}</h4>
                         <div style={{ marginBottom: '1rem' }}>
@@ -131,6 +145,24 @@ const AdminModules = () => {
                                 <button type="submit" className="btn btn-primary">{editMode ? 'Save Changes' : 'Create Module'}</button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {isDeleteModalOpen && moduleToDelete && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+                    <div className="card animate-fade-in" style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <h3 style={{ color: 'var(--danger)', marginBottom: '0.5rem' }}>Delete Module?</h3>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                                Are you sure you want to delete <strong>{moduleToDelete.name}</strong>?
+                                This action cannot be undone and will automatically remove this module from all Plans and Tenants currently using it.
+                            </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                            <button onClick={closeDeleteModal} className="btn btn-outline">Cancel</button>
+                            <button onClick={confirmDelete} className="btn btn-danger">Yes, Delete</button>
+                        </div>
                     </div>
                 </div>
             )}
