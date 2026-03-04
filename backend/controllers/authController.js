@@ -57,10 +57,10 @@ exports.register = async (req, res) => {
     try {
         await connection.beginTransaction();
 
-        // Create Tenant
+        // Create Tenant (pending admin approval)
         const [tenantResult] = await connection.query(
-            'INSERT INTO tenants (name, subdomain) VALUES (?, ?)',
-            [storeName, subdomain]
+            'INSERT INTO tenants (name, subdomain, approval_status) VALUES (?, ?, ?)',
+            [storeName, subdomain, 'pending']
         );
         const tenantId = tenantResult.insertId;
 
@@ -72,6 +72,28 @@ exports.register = async (req, res) => {
             'INSERT INTO users (tenant_id, name, email, password, role) VALUES (?, ?, ?, ?, ?)',
             [tenantId, name, email, hashedPassword, 'tenant_owner']
         );
+
+        // Auto-assign free/trial plan if available
+        const [freePlans] = await connection.query(
+            'SELECT id, trial_days FROM plans WHERE price_monthly = 0 OR trial_days > 0 ORDER BY trial_days DESC LIMIT 1'
+        );
+        if (freePlans.length > 0) {
+            const plan = freePlans[0];
+            const trialDays = plan.trial_days || 30;
+            const status = plan.trial_days > 0 ? 'trial' : 'active';
+            await connection.query(
+                `INSERT INTO subscriptions (tenant_id, plan_id, billing_cycle, start_date, end_date, status) 
+                 VALUES (?, ?, 'monthly', CURDATE(), DATE_ADD(CURDATE(), INTERVAL ? DAY), ?)`,
+                [tenantId, plan.id, trialDays, status]
+            );
+
+            // Provision plan modules
+            const [planModules] = await connection.query('SELECT module_id FROM plan_modules WHERE plan_id = ?', [plan.id]);
+            if (planModules.length > 0) {
+                const vals = planModules.map(pm => [tenantId, pm.module_id]);
+                await connection.query('INSERT IGNORE INTO tenant_modules (tenant_id, module_id) VALUES ?', [vals]);
+            }
+        }
 
         await connection.commit();
 

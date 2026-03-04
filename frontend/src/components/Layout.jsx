@@ -39,6 +39,11 @@ const Layout = ({ role }) => {
         { name: 'Tenant Config', path: '/admin/assignments', roles: ['super_admin'] },
         { name: 'Gateways', path: '/admin/gateways', roles: ['super_admin'] },
         { name: 'Transactions', path: '/admin/transactions', roles: ['super_admin'] },
+        { name: 'Audit Logs', path: '/admin/audit-logs', roles: ['super_admin'] },
+        { name: 'Add-Ons', path: '/admin/addons', roles: ['super_admin'] },
+        { name: 'Invoices', path: '/admin/invoices', roles: ['super_admin'] },
+        { name: 'Themes', path: '/admin/themes', roles: ['super_admin'] },
+        { name: 'Security', path: '/admin/security', roles: ['super_admin'] },
         { name: 'Platform Settings', path: '/admin/platform-settings', roles: ['super_admin'] },
     ];
 

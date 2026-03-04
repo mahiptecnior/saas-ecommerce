@@ -14,7 +14,19 @@ const PlatformSettings = () => {
         smtp_pass: '',
         smtp_from: '',
         default_currency: 'USD',
-        platform_logo: ''
+        platform_logo: '',
+        commission_rate: '5',
+        sms_provider: '',
+        sms_api_key: '',
+        sms_sender_id: '',
+        whatsapp_api_key: '',
+        whatsapp_phone_number: '',
+        whatsapp_provider: '',
+        platform_language: 'en',
+        notification_order_email: 'true',
+        notification_registration_email: 'true',
+        notification_payment_email: 'true',
+        notification_expiry_email: 'true'
     });
 
     // Profile State
@@ -179,10 +191,13 @@ const PlatformSettings = () => {
             <p className="text-muted" style={{ marginBottom: '1.5rem' }}>Manage global configurations, mailing, and your admin profile.</p>
 
             {/* Tabs Header */}
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', marginBottom: '2rem', flexWrap: 'wrap' }}>
                 <button style={tabStyle('general')} onClick={() => setActiveTab('general')}>General</button>
-                <button style={tabStyle('smtp')} onClick={() => setActiveTab('smtp')}>SMTP Settings</button>
-                <button style={tabStyle('profile')} onClick={() => setActiveTab('profile')}>Admin Profile</button>
+                <button style={tabStyle('smtp')} onClick={() => setActiveTab('smtp')}>SMTP</button>
+                <button style={tabStyle('sms')} onClick={() => setActiveTab('sms')}>SMS</button>
+                <button style={tabStyle('whatsapp')} onClick={() => setActiveTab('whatsapp')}>WhatsApp</button>
+                <button style={tabStyle('notifications')} onClick={() => setActiveTab('notifications')}>Notifications</button>
+                <button style={tabStyle('profile')} onClick={() => setActiveTab('profile')}>Profile</button>
             </div>
 
             {msg && <div style={{ padding: '1rem', backgroundColor: msg.includes('Failed') ? 'var(--danger)' : 'var(--success)', color: 'white', borderRadius: '8px', marginBottom: '1.5rem' }}>{msg}</div>}
@@ -308,6 +323,90 @@ const PlatformSettings = () => {
                             Send Test Email
                         </button>
                     </div>
+                </form>
+            )}
+
+            {/* SMS TAB */}
+            {activeTab === 'sms' && (
+                <form onSubmit={handleSettingsSave} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>SMS Provider</label>
+                        <select className="input-field" name="sms_provider" value={settings.sms_provider} onChange={handleSettingsChange}>
+                            <option value="">Select Provider</option>
+                            <option value="twilio">Twilio</option>
+                            <option value="nexmo">Nexmo/Vonage</option>
+                            <option value="msg91">MSG91</option>
+                            <option value="custom">Custom API</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>API Key</label>
+                        <input className="input-field" type="password" name="sms_api_key" value={settings.sms_api_key} onChange={handleSettingsChange} placeholder="Enter SMS API key" />
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Sender ID</label>
+                        <input className="input-field" name="sms_sender_id" value={settings.sms_sender_id} onChange={handleSettingsChange} placeholder="e.g., MYSTORE" />
+                    </div>
+                    <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Saving...' : 'Save SMS Settings'}</button>
+                </form>
+            )}
+
+            {/* WHATSAPP TAB */}
+            {activeTab === 'whatsapp' && (
+                <form onSubmit={handleSettingsSave} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>WhatsApp Provider</label>
+                        <select className="input-field" name="whatsapp_provider" value={settings.whatsapp_provider} onChange={handleSettingsChange}>
+                            <option value="">Select Provider</option>
+                            <option value="meta">Meta Business API</option>
+                            <option value="twilio">Twilio WhatsApp</option>
+                            <option value="wati">WATI</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>API Key</label>
+                        <input className="input-field" type="password" name="whatsapp_api_key" value={settings.whatsapp_api_key} onChange={handleSettingsChange} placeholder="Enter WhatsApp API key" />
+                    </div>
+                    <div>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Phone Number</label>
+                        <input className="input-field" name="whatsapp_phone_number" value={settings.whatsapp_phone_number} onChange={handleSettingsChange} placeholder="+1234567890" />
+                    </div>
+                    <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Saving...' : 'Save WhatsApp Settings'}</button>
+                </form>
+            )}
+
+            {/* NOTIFICATIONS TAB */}
+            {activeTab === 'notifications' && (
+                <form onSubmit={handleSettingsSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                    <p className="text-muted" style={{ marginBottom: '0.5rem' }}>Toggle email notifications for different events across the platform.</p>
+                    {[
+                        { key: 'notification_order_email', label: 'New Order Notifications' },
+                        { key: 'notification_registration_email', label: 'New Tenant Registration' },
+                        { key: 'notification_payment_email', label: 'Payment Confirmations' },
+                        { key: 'notification_expiry_email', label: 'Subscription Expiry Alerts' }
+                    ].map(item => (
+                        <label key={item.key} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
+                            <input type="checkbox" checked={settings[item.key] === 'true'} onChange={(e) => setSettings(prev => ({ ...prev, [item.key]: e.target.checked ? 'true' : 'false' }))} />
+                            <span>{item.label}</span>
+                        </label>
+                    ))}
+                    <div style={{ marginTop: '1rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Platform Language</label>
+                        <select className="input-field" name="platform_language" value={settings.platform_language} onChange={handleSettingsChange}>
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="hi">Hindi</option>
+                            <option value="ar">Arabic</option>
+                            <option value="zh">Chinese</option>
+                        </select>
+                    </div>
+                    <div style={{ marginTop: '0.5rem' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Commission Rate (%)</label>
+                        <input className="input-field" type="number" step="0.1" min="0" max="100" name="commission_rate" value={settings.commission_rate} onChange={handleSettingsChange} />
+                    </div>
+                    <button type="submit" className="btn btn-primary" disabled={loading}>{loading ? 'Saving...' : 'Save Settings'}</button>
                 </form>
             )}
 

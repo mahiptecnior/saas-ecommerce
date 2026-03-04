@@ -4,6 +4,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const tenantContext = require('./middleware/tenantContext');
 const billingController = require('./controllers/billingController');
+const { startCronJobs } = require('./utils/cronJobs');
 
 dotenv.config();
 
@@ -45,4 +46,5 @@ app.use('/api/v1/billing', require('./routes/billingRoutes'));
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    startCronJobs();
 });

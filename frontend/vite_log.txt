@@ -9,3 +9,27 @@
   ➜  Local:   http://localhost:5173/
   ➜  Network: use --host to expose
   ➜  press h + enter to show help
+10:22:27 AM [vite] (client) hmr update /src/pages/AdminDashboard.jsx
+10:22:50 AM [vite] (client) hmr update /src/App.jsx
+10:23:18 AM [vite] (client) hmr update /src/components/Layout.jsx
+10:38:09 AM [vite] (client) hmr update /src/pages/Tenants.jsx
+10:38:34 AM [vite] (client) hmr update /src/pages/Tenants.jsx
+10:38:52 AM [vite] (client) hmr update /src/pages/Tenants.jsx
+10:42:37 AM [vite] (client) hmr update /src/App.jsx
+10:42:48 AM [vite] (client) hmr update /src/components/Layout.jsx
+10:43:36 AM [vite] (client) hmr update /src/pages/Plans.jsx
+10:43:57 AM [vite] (client) hmr update /src/pages/Plans.jsx
+10:47:59 AM [vite] (client) hmr update /src/App.jsx
+10:48:00 AM [vite] (client) hmr update /src/components/Layout.jsx
+10:48:23 AM [vite] (client) hmr update /src/pages/AdminDashboard.jsx
+10:51:26 AM [vite] (client) hmr update /src/pages/PlatformSettings.jsx
+10:52:12 AM [vite] (client) hmr update /src/pages/PlatformSettings.jsx
+10:53:03 AM [vite] (client) hmr update /src/App.jsx
+10:53:05 AM [vite] (client) hmr update /src/components/Layout.jsx
+10:55:38 AM [vite] (client) hmr update /src/App.jsx
+10:55:40 AM [vite] (client) hmr update /src/components/Layout.jsx
+10:55:40 AM [vite] (client) hmr update /src/components/Layout.jsx
+11:01:19 AM [vite] (client) hmr update /src/pages/Marketing.jsx
+11:02:14 AM [vite] (client) hmr update /src/pages/Support.jsx
+11:02:15 AM [vite] (client) hmr update /src/pages/Accounts.jsx
+11:02:56 AM [vite] (client) hmr update /src/pages/TenantDashboard.jsx

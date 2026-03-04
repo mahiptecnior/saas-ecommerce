@@ -21,6 +21,11 @@ import TenantDashboard from './pages/TenantDashboard';
 import AdminGateways from './pages/AdminGateways';
 import AdminTransactions from './pages/AdminTransactions';
 import AdminModules from './pages/AdminModules';
+import AuditLogs from './pages/AuditLogs';
+import Addons from './pages/Addons';
+import AdminInvoices from './pages/AdminInvoices';
+import AdminThemes from './pages/AdminThemes';
+import AdminSecurity from './pages/AdminSecurity';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -47,6 +52,11 @@ function App() {
         <Route path="platform-settings" element={<PlatformSettings />} />
         <Route path="gateways" element={<AdminGateways />} />
         <Route path="transactions" element={<AdminTransactions />} />
+        <Route path="audit-logs" element={<AuditLogs />} />
+        <Route path="addons" element={<Addons />} />
+        <Route path="invoices" element={<AdminInvoices />} />
+        <Route path="themes" element={<AdminThemes />} />
+        <Route path="security" element={<AdminSecurity />} />
       </Route>
 
       {/* Tenant Protected Routes */}

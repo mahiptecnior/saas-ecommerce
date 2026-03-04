@@ -131,7 +131,27 @@ exports.handleWebhook = async (req, res) => {
             console.log(`Successfully upgraded Tenant ${tenantId} to Plan ${planId}`);
         } catch (dbError) {
             console.error('Error processing successful payment webhook DB update:', dbError);
-            // In production, consider queuing failed webhook events for retry
+        }
+    }
+
+    // Handle failed payments
+    if (event.type === 'payment_intent.payment_failed') {
+        const intent = event.data.object;
+        const failedTenantId = intent.metadata?.tenantId;
+        if (failedTenantId) {
+            try {
+                await pool.query(
+                    'UPDATE subscriptions SET payment_status = "failed" WHERE tenant_id = ? AND status = "active"',
+                    [failedTenantId]
+                );
+                await logger.logAction(failedTenantId, null, 'PAYMENT_FAILED', {
+                    amount: intent.amount,
+                    error: intent.last_payment_error?.message || 'Unknown'
+                }, '');
+                console.log(`[WEBHOOK] Payment failed for tenant ${failedTenantId}`);
+            } catch (err) {
+                console.error('Failed payment handling error:', err);
+            }
         }
     }
 

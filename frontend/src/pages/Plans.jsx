@@ -15,6 +15,7 @@ const Plans = () => {
     const [productLimit, setProductLimit] = useState('-1');
     const [orderLimit, setOrderLimit] = useState('-1');
     const [staffLimit, setStaffLimit] = useState('-1');
+    const [trialDays, setTrialDays] = useState('0');
 
     // Modules state
     const [availableModules, setAvailableModules] = useState([]);
@@ -53,6 +54,7 @@ const Plans = () => {
         setProductLimit('-1');
         setOrderLimit('-1');
         setStaffLimit('-1');
+        setTrialDays('0');
         setSelectedModules([]);
         setIsModalOpen(true);
     };
@@ -67,6 +69,7 @@ const Plans = () => {
         setProductLimit(plan.product_limit);
         setOrderLimit(plan.order_limit);
         setStaffLimit(plan.staff_limit);
+        setTrialDays(plan.trial_days || 0);
         setSelectedModules(plan.modules || []);
         setIsModalOpen(true);
     };
@@ -80,6 +83,7 @@ const Plans = () => {
         const payload = {
             name, description, price_monthly: priceMonthly, price_yearly: priceYearly,
             product_limit: productLimit, order_limit: orderLimit, staff_limit: staffLimit,
+            trial_days: trialDays,
             moduleIds: selectedModules
         };
 
@@ -138,6 +142,7 @@ const Plans = () => {
                             <li style={{ marginBottom: '0.5rem' }}>📦 <strong>{plan.product_limit === -1 ? 'Unlimited' : plan.product_limit}</strong> Products</li>
                             <li style={{ marginBottom: '0.5rem' }}>🛒 <strong>{plan.order_limit === -1 ? 'Unlimited' : plan.order_limit}</strong> Orders</li>
                             <li style={{ marginBottom: '0.5rem' }}>👥 <strong>{plan.staff_limit === -1 ? 'Unlimited' : plan.staff_limit}</strong> Staff</li>
+                            {plan.trial_days > 0 && <li style={{ marginBottom: '0.5rem' }}>🎁 <strong>{plan.trial_days}</strong> day trial</li>}
 
                             {/* Dynamic Modules List */}
                             <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
@@ -218,6 +223,11 @@ const Plans = () => {
                                     </div>
                                     <small className="text-muted" style={{ fontSize: '0.7rem' }}>-1 for unlimited</small>
                                 </div>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: '500' }}>Trial Days</label>
+                                <input className="input-field" type="number" min="0" value={trialDays} onChange={(e) => setTrialDays(e.target.value)} placeholder="0 = no trial" />
+                                <small className="text-muted" style={{ fontSize: '0.7rem' }}>0 = no trial period</small>
                             </div>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.5rem', fontWeight: '500' }}>Features / Modules Included</label>
