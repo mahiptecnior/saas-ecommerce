@@ -1,0 +1,27 @@
+
+> backend@1.0.0 start
+> node server.js
+
+[dotenv@17.3.1] injecting env (12) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+Server running on port 5001
+[CRON] Subscription expiry cron job scheduled (daily at midnight).
+Message sent: <09216b61-dc17-264a-fc18-250f4726b5eb@localhost>
+Staff Add Error: Error: Data truncated for column 'role' at row 1
+    at PromisePool.query (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/mysql2/lib/promise/pool.js:36:22)
+    at exports.addStaff (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/controllers/staffController.js:52:20) {
+  code: 'WARN_DATA_TRUNCATED',
+  errno: 1265,
+  sql: "INSERT INTO users (tenant_id, name, email, password, role, role_id) VALUES (8, 'Blogger Bob', 'bob@store.com', '$2b$10$zU5bT8gnDR2vg.PJbxK7sevK1lWfYFvmgQv1zY913QGonzN6XG4Ry', 'tenant_admin', '21')",
+  sqlState: '01000',
+  sqlMessage: "Data truncated for column 'role' at row 1"
+}
+Staff Add Error: Error: Data truncated for column 'role' at row 1
+    at PromisePool.query (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/node_modules/mysql2/lib/promise/pool.js:36:22)
+    at exports.addStaff (/Users/mahipgupta/.gemini/antigravity/scratch/saas-ecommerce/backend/controllers/staffController.js:52:20) {
+  code: 'WARN_DATA_TRUNCATED',
+  errno: 1265,
+  sql: "INSERT INTO users (tenant_id, name, email, password, role, role_id) VALUES (8, 'Blogger Bob', 'bob@store.com', '$2b$10$GQPAg5iMeLK7f/5u9W5hIekfoKSq6WEeHdQjKFuvXB1mYLKGNZrYi', 'tenant_admin', '21')",
+  sqlState: '01000',
+  sqlMessage: "Data truncated for column 'role' at row 1"
+}

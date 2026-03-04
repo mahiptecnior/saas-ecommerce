@@ -26,3 +26,4 @@ Analytics Error: Error: Unknown column 'created_at' in 'where clause'
   sqlState: '42S22',
   sqlMessage: "Unknown column 'created_at' in 'where clause'"
 }
+Message sent: <5ae71294-5f7f-dbb0-50f0-7e174fe54b61@localhost>

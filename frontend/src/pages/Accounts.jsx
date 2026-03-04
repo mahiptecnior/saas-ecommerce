@@ -39,6 +39,16 @@ const Accounts = () => {
         } catch (err) { alert('Error adding expense'); }
     };
 
+    const handleDeleteExpense = async (id) => {
+        if (!confirm('Delete this expense?')) return;
+        try {
+            await api.delete(`/modules/accounts/expenses/${id}`);
+            setMsg('Expense deleted.');
+            fetchAccountData();
+            setTimeout(() => setMsg(''), 3000);
+        } catch (err) { alert('Error deleting expense'); }
+    };
+
     return (
         <div className="fade-in">
             {msg && <div style={{ padding: '0.75rem', backgroundColor: 'var(--success)', color: '#fff', borderRadius: '8px', marginBottom: '1rem' }}>{msg}</div>}
@@ -70,19 +80,23 @@ const Accounts = () => {
                             <th style={{ padding: '0.75rem' }}>Category</th>
                             <th style={{ padding: '0.75rem' }}>Description</th>
                             <th style={{ padding: '0.75rem' }}>Amount</th>
+                            <th style={{ padding: '0.75rem' }}>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</td></tr>
+                            <tr><td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</td></tr>
                         ) : expenses.length === 0 ? (
-                            <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No expenses recorded.</td></tr>
+                            <tr><td colSpan="5" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No expenses recorded.</td></tr>
                         ) : expenses.map(expense => (
                             <tr key={expense.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                 <td style={{ padding: '0.75rem', fontSize: '0.85rem' }}>{new Date(expense.date).toLocaleDateString()}</td>
                                 <td style={{ padding: '0.75rem' }}><span className="badge badge-active">{expense.category}</span></td>
                                 <td style={{ padding: '0.75rem' }}>{expense.description}</td>
                                 <td style={{ padding: '0.75rem', color: 'var(--danger)', fontWeight: '600' }}>-${Number(expense.amount).toFixed(2)}</td>
+                                <td style={{ padding: '0.75rem' }}>
+                                    <button onClick={() => handleDeleteExpense(expense.id)} style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', backgroundColor: 'var(--danger)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>Del</button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>

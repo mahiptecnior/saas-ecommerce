@@ -34,6 +34,10 @@ exports.createTenant = async (req, res) => {
         );
         const tenantId = tenantResult.insertId;
 
+        // Seed default system roles
+        const seedSystemRoles = require('../utils/seedRoles');
+        await seedSystemRoles(connection, tenantId);
+
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -220,6 +224,11 @@ exports.getAnalytics = async (req, res) => {
             ORDER BY month ASC
         `);
 
+        // Phase 14 adds: Brands and Reviews counts
+        const [totalBrands] = await pool.query('SELECT COUNT(*) as count FROM brands');
+        const [totalReviews] = await pool.query('SELECT COUNT(*) as count FROM product_reviews');
+        const [totalCategories] = await pool.query('SELECT COUNT(*) as count FROM categories');
+
         // Churn rate: expired subs this month / total active at start of month
         const [churnExpired] = await pool.query(
             `SELECT COUNT(*) as count FROM subscriptions WHERE status = 'expired' AND updated_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')`
@@ -253,7 +262,10 @@ exports.getAnalytics = async (req, res) => {
                 planRevenue,
                 monthlyTrend,
                 tenantTrend,
-                churnRate: parseFloat(churnRate)
+                churnRate: parseFloat(churnRate),
+                totalBrands: totalBrands[0].count,
+                totalReviews: totalReviews[0].count,
+                totalCategories: totalCategories[0].count
             }
         });
     } catch (error) {

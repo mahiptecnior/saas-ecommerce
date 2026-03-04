@@ -6,6 +6,7 @@ const Marketing = () => {
     const [campaigns, setCampaigns] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCouponModal, setShowCouponModal] = useState(false);
+    const [editCoupon, setEditCoupon] = useState(null);
     const [showCampaignModal, setShowCampaignModal] = useState(false);
     const [couponForm, setCouponForm] = useState({ code: '', discount_type: 'percentage', discount_value: '', expiry_date: '' });
     const [campaignForm, setCampaignForm] = useState({ name: '', type: 'email', message: '' });
@@ -29,18 +30,39 @@ const Marketing = () => {
     const handleCreateCoupon = async (e) => {
         e.preventDefault();
         try {
-            await api.post('/modules/marketing/coupons', couponForm);
+            if (editCoupon) {
+                await api.put(`/modules/marketing/coupons/${editCoupon.id}`, couponForm);
+                setMsg('Coupon updated!');
+            } else {
+                await api.post('/modules/marketing/coupons', couponForm);
+                setMsg('Coupon created!');
+            }
             setCouponForm({ code: '', discount_type: 'percentage', discount_value: '', expiry_date: '' });
+            setEditCoupon(null);
             setShowCouponModal(false);
-            setMsg('Coupon created!');
             fetchData();
-        } catch (err) { alert('Error creating coupon'); }
+        } catch (err) { alert('Error saving coupon'); }
+    };
+
+    const handleDeleteCoupon = async (id) => {
+        if (!confirm('Delete this coupon?')) return;
+        try {
+            await api.delete(`/modules/marketing/coupons/${id}`);
+            setMsg('Coupon deleted.');
+            fetchData();
+        } catch (err) { alert('Error deleting coupon'); }
+    };
+
+    const openEditCoupon = (c) => {
+        setEditCoupon(c);
+        setCouponForm({ code: c.code, discount_type: c.discount_type, discount_value: c.discount_value, expiry_date: c.expiry_date ? c.expiry_date.split('T')[0] : '' });
+        setShowCouponModal(true);
     };
 
     const handleLaunchCampaign = async (e) => {
         e.preventDefault();
         try {
-            // Save campaign to backend history
+            await api.post('/modules/marketing/campaigns', campaignForm);
             setMsg(`${campaignForm.type.toUpperCase()} Campaign "${campaignForm.name}" launched! 🚀`);
             setCampaignForm({ name: '', type: 'email', message: '' });
             setShowCampaignModal(false);
@@ -73,6 +95,33 @@ const Marketing = () => {
                 </div>
             </div>
 
+            {/* CAMPAIGN HISTORY */}
+            {campaigns.length > 0 && (
+                <div className="card" style={{ marginBottom: '2rem' }}>
+                    <h3 style={{ marginBottom: '1rem' }}>📋 Campaign History</h3>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <thead>
+                            <tr style={{ borderBottom: '2px solid var(--border)', textAlign: 'left' }}>
+                                <th style={{ padding: '0.75rem' }}>Name</th>
+                                <th style={{ padding: '0.75rem' }}>Channel</th>
+                                <th style={{ padding: '0.75rem' }}>Status</th>
+                                <th style={{ padding: '0.75rem' }}>Launched</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {campaigns.map(c => (
+                                <tr key={c.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                    <td style={{ padding: '0.75rem', fontWeight: '500' }}>{c.name}</td>
+                                    <td style={{ padding: '0.75rem' }}><span className="badge badge-active">{c.type}</span></td>
+                                    <td style={{ padding: '0.75rem' }}><span className="badge badge-pending">{c.status || 'launched'}</span></td>
+                                    <td style={{ padding: '0.75rem', fontSize: '0.85rem' }}>{new Date(c.created_at).toLocaleDateString()}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
             {/* COUPONS */}
             <div className="card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
@@ -86,6 +135,7 @@ const Marketing = () => {
                             <th style={{ padding: '0.75rem' }}>Type</th>
                             <th style={{ padding: '0.75rem' }}>Value</th>
                             <th style={{ padding: '0.75rem' }}>Expiry</th>
+                            <th style={{ padding: '0.75rem' }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -99,6 +149,12 @@ const Marketing = () => {
                                 <td style={{ padding: '0.75rem' }}><span className="badge badge-active">{c.discount_type}</span></td>
                                 <td style={{ padding: '0.75rem' }}>{c.discount_type === 'percentage' ? `${c.discount_value}%` : `$${c.discount_value}`}</td>
                                 <td style={{ padding: '0.75rem', fontSize: '0.85rem' }}>{c.expiry_date ? new Date(c.expiry_date).toLocaleDateString() : 'No expiry'}</td>
+                                <td style={{ padding: '0.75rem' }}>
+                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                        <button className="btn" onClick={() => openEditCoupon(c)} style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem', backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>Edit</button>
+                                        <button className="btn" onClick={() => handleDeleteCoupon(c.id)} style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem', backgroundColor: 'var(--danger)', color: '#fff' }}>Del</button>
+                                    </div>
+                                </td>
                             </tr>
                         ))}
                     </tbody>

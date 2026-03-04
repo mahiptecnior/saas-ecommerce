@@ -79,4 +79,11 @@ router.post('/2fa-toggle', securityController.toggle2FA);
 router.get('/tenants/:id/export', securityController.exportTenantData);
 router.delete('/tenants/:id/data', securityController.deleteTenantData);
 
+// Global Support Tickets
+const moduleController = require('../controllers/moduleController');
+router.get('/support/tickets', moduleController.getAllTickets);
+router.get('/support/tickets/:id/replies', moduleController.getTicketReplies);
+router.post('/support/tickets/:id/replies', moduleController.addTicketReply);
+router.patch('/support/tickets/:id/status', moduleController.updateTicketStatus);
+
 module.exports = router;

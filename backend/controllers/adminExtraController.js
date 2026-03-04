@@ -229,6 +229,9 @@ exports.getTenantUsage = async (req, res) => {
         const [orders] = await pool.query('SELECT COUNT(*) as count FROM orders WHERE tenant_id = ?', [tenantId]);
         const [staff] = await pool.query('SELECT COUNT(*) as count FROM users WHERE tenant_id = ? AND role = "staff"', [tenantId]);
         const [modules] = await pool.query('SELECT COUNT(*) as count FROM tenant_modules WHERE tenant_id = ?', [tenantId]);
+        const [brands] = await pool.query('SELECT COUNT(*) as count FROM brands WHERE tenant_id = ?', [tenantId]);
+        const [reviews] = await pool.query('SELECT COUNT(*) as count FROM product_reviews WHERE tenant_id = ?', [tenantId]);
+        const [categories] = await pool.query('SELECT COUNT(*) as count FROM categories WHERE tenant_id = ?', [tenantId]);
 
         res.json({
             success: true,
@@ -238,7 +241,10 @@ exports.getTenantUsage = async (req, res) => {
                 orders: { used: orders[0].count, limit: limits.order_limit },
                 staff: { used: staff[0].count, limit: limits.staff_limit },
                 storage: { used_mb: 0, limit_mb: limits.storage_limit_mb },
-                modules_active: modules[0].count
+                modules_active: modules[0].count,
+                brands_count: brands[0].count,
+                reviews_count: reviews[0].count,
+                categories_count: categories[0].count
             }
         });
     } catch (error) {

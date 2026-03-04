@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 
 const TenantDashboard = () => {
-    const [stats, setStats] = useState({ products: 0, orders: 0, sales: '0.00' });
+    const [stats, setStats] = useState({ products: 0, orders: 0, sales: '0.00', brands: 0, reviews: 0, categories: 0, customers: 0 });
     const [recentOrders, setRecentOrders] = useState([]);
     const [modules, setModules] = useState([]);
     const [subscription, setSubscription] = useState(null);
@@ -11,34 +11,39 @@ const TenantDashboard = () => {
     useEffect(() => {
         const fetchAll = async () => {
             try {
-                const [productsRes, ordersRes] = await Promise.all([
+                const [productsRes, ordersRes, brandsRes, reviewsRes, catsRes, customersRes] = await Promise.allSettled([
                     api.get('/products'),
-                    api.get('/orders')
+                    api.get('/orders'),
+                    api.get('/brands'),
+                    api.get('/reviews'),
+                    api.get('/categories'),
+                    api.get('/customers'),
                 ]);
 
-                const allOrders = ordersRes.data.data || [];
+                const allOrders = ordersRes.status === 'fulfilled' ? (ordersRes.value.data.data || []) : [];
                 const totalSales = allOrders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
 
                 setStats({
-                    products: productsRes.data.data?.length || 0,
+                    products: productsRes.status === 'fulfilled' ? (productsRes.value.data.data?.length || 0) : 0,
                     orders: allOrders.length,
-                    sales: totalSales.toFixed(2)
+                    sales: totalSales.toFixed(2),
+                    brands: brandsRes.status === 'fulfilled' ? (brandsRes.value.data.data?.length || 0) : 0,
+                    reviews: reviewsRes.status === 'fulfilled' ? (reviewsRes.value.data.data?.length || 0) : 0,
+                    categories: catsRes.status === 'fulfilled' ? (catsRes.value.data.data?.length || 0) : 0,
+                    customers: customersRes.status === 'fulfilled' ? (customersRes.value.data.data?.length || 0) : 0,
                 });
 
-                // Get the 5 most recent orders
                 setRecentOrders(allOrders.slice(0, 5));
 
-                // Try to fetch modules
                 try {
                     const modulesRes = await api.get('/tenant/modules');
                     setModules(modulesRes.data.data || []);
-                } catch (e) { /* modules endpoint may not exist for all tenants */ }
+                } catch (e) { }
 
-                // Try to fetch subscription
                 try {
                     const subRes = await api.get('/tenant/subscription');
                     setSubscription(subRes.data.data || null);
-                } catch (e) { /* subscription endpoint may not exist */ }
+                } catch (e) { }
 
             } catch (err) {
                 console.error('Error fetching tenant stats', err);
@@ -58,22 +63,42 @@ const TenantDashboard = () => {
 
     return (
         <div className="animate-fade-in">
-            {/* KPI Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+            {/* KPI Cards Row 1 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
                 <div className="card">
                     <p className="text-muted" style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Total Products</p>
-                    <h2 style={{ fontSize: '2rem' }}>{stats.products}</h2>
+                    <h2 style={{ fontSize: '2rem' }}>📦 {stats.products}</h2>
                 </div>
                 <div className="card">
                     <p className="text-muted" style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Total Orders</p>
-                    <h2 style={{ fontSize: '2rem' }}>{stats.orders}</h2>
+                    <h2 style={{ fontSize: '2rem' }}>🛒 {stats.orders}</h2>
                 </div>
-                <div className="card">
+                <div className="card" style={{ borderLeft: '4px solid var(--success)' }}>
                     <p className="text-muted" style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Gross Sales</p>
                     <h2 style={{ fontSize: '2rem', color: 'var(--success)' }}>${stats.sales}</h2>
                 </div>
+                <div className="card">
+                    <p className="text-muted" style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Customers</p>
+                    <h2 style={{ fontSize: '2rem' }}>👥 {stats.customers}</h2>
+                </div>
+            </div>
+
+            {/* KPI Cards Row 2 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                <div className="card">
+                    <p className="text-muted" style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Brands</p>
+                    <h2 style={{ fontSize: '2rem' }}>🏷️ {stats.brands}</h2>
+                </div>
+                <div className="card">
+                    <p className="text-muted" style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Reviews</p>
+                    <h2 style={{ fontSize: '2rem' }}>⭐ {stats.reviews}</h2>
+                </div>
+                <div className="card">
+                    <p className="text-muted" style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Categories</p>
+                    <h2 style={{ fontSize: '2rem' }}>📁 {stats.categories}</h2>
+                </div>
                 {subscription && (
-                    <div className="card">
+                    <div className="card" style={{ borderLeft: '4px solid var(--primary)' }}>
                         <p className="text-muted" style={{ fontSize: '0.8rem', fontWeight: '600', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Current Plan</p>
                         <h2 style={{ fontSize: '1.5rem' }}>{subscription.plan_name || 'Free'}</h2>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>

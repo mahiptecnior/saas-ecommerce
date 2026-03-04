@@ -24,6 +24,21 @@ exports.createCategory = async (req, res) => {
     }
 };
 
+exports.updateCategory = async (req, res) => {
+    const tenantId = req.tenantId;
+    const { id } = req.params;
+    const { name, slug, parent_id } = req.body;
+    try {
+        await pool.query(
+            'UPDATE categories SET name = ?, slug = ?, parent_id = ? WHERE id = ? AND tenant_id = ?',
+            [name, slug || name.toLowerCase().replace(/ /g, '-'), parent_id || null, id, tenantId]
+        );
+        res.json({ success: true, message: 'Category updated' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error updating category' });
+    }
+};
+
 exports.deleteCategory = async (req, res) => {
     const tenantId = req.tenantId;
     const { id } = req.params;

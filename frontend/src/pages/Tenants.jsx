@@ -233,6 +233,18 @@ const Tenants = () => {
                                                 <UsageBar label="Orders" used={usageData.orders.used} limit={usageData.orders.limit} />
                                                 <UsageBar label="Staff" used={usageData.staff.used} limit={usageData.staff.limit} />
                                                 <div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>Brands</div>
+                                                    <strong>{usageData.brands_count}</strong>
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>Reviews</div>
+                                                    <strong>{usageData.reviews_count}</strong>
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>Categories</div>
+                                                    <strong>{usageData.categories_count}</strong>
+                                                </div>
+                                                <div>
                                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>Active Modules</div>
                                                     <strong>{usageData.modules_active}</strong>
                                                 </div>

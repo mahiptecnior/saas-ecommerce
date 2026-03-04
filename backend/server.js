@@ -39,9 +39,14 @@ app.use('/api/v1/platform-settings', require('./routes/platformSettingsRoutes'))
 app.use('/api/v1/products', require('./routes/productRoutes'));
 app.use('/api/v1/orders', require('./routes/orderRoutes'));
 app.use('/api/v1/modules', require('./routes/moduleRoutes'));
+app.use('/api/v1/tenant-admin', require('./routes/tenantAdminRoutes'));
 app.use('/api/v1/categories', require('./routes/categoryRoutes'));
 app.use('/api/v1/settings', require('./routes/settingsRoutes'));
 app.use('/api/v1/billing', require('./routes/billingRoutes'));
+app.use('/api/v1/shipping', require('./routes/shippingRoutes'));
+app.use('/api/v1/brands', require('./routes/brandRoutes'));
+app.use('/api/v1/reviews', require('./routes/reviewRoutes'));
+app.use('/api/v1/customers', require('./routes/customerRoutes'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

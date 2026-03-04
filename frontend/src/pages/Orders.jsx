@@ -67,9 +67,25 @@ const Orders = () => {
         }
     };
 
-    const generateInvoice = (orderId) => {
-        alert(`Generating invoice for Order #${orderId}... (PDF Download Mocked)`);
-        // In a real app, this would hit /api/v1/orders/:id/invoice
+    const generateInvoice = async (orderId) => {
+        try {
+            // Trigger download from backend
+            const response = await api.get(`/orders/${orderId}/invoice`, {
+                responseType: 'blob', // Important for handling PDF files
+            });
+
+            // Create a link to download the file
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Invoice-Order-${orderId}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Error downloading invoice:', error);
+            alert('Failed to generate invoice. Please try again.');
+        }
     };
 
     if (loading) return <div>Loading orders...</div>;

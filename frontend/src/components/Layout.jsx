@@ -44,6 +44,7 @@ const Layout = ({ role }) => {
         { name: 'Invoices', path: '/admin/invoices', roles: ['super_admin'] },
         { name: 'Themes', path: '/admin/themes', roles: ['super_admin'] },
         { name: 'Security', path: '/admin/security', roles: ['super_admin'] },
+        { name: '🎧 Support Center', path: '/admin/support', roles: ['super_admin'] },
         { name: 'Platform Settings', path: '/admin/platform-settings', roles: ['super_admin'] },
     ];
 
@@ -51,6 +52,9 @@ const Layout = ({ role }) => {
         { name: 'Dashboard', path: '/dashboard', module: 'core' },
         { name: 'Products', path: '/dashboard/products', module: 'product' },
         { name: 'Categories', path: '/dashboard/categories', module: 'product' },
+        { name: 'Brands', path: '/dashboard/brands', module: 'product' },
+        { name: 'Reviews', path: '/dashboard/reviews', module: 'product' },
+        { name: '👥 Customers', path: '/dashboard/customers', module: 'core' },
         { name: 'Orders', path: '/dashboard/orders', module: 'sales' },
         { name: 'Marketing', path: '/dashboard/marketing', module: 'marketing' },
         { name: 'Accounts', path: '/dashboard/accounts', module: 'accounts' },
@@ -58,6 +62,12 @@ const Layout = ({ role }) => {
         { name: 'Builder', path: '/dashboard/builder', module: 'theme_builder' },
         { name: 'Settings', path: '/dashboard/settings', module: 'core' },
     ];
+
+    // Only show Roles and Staff to the store owner (role_id is null)
+    if (user && user.role_id == null) {
+        tenantMenu.push({ name: 'Roles', path: '/dashboard/roles', module: 'core' });
+        tenantMenu.push({ name: 'Staff', path: '/dashboard/staff', module: 'core' });
+    }
 
     const filteredMenu = role === 'super_admin'
         ? adminMenu

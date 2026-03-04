@@ -18,6 +18,11 @@ import SystemManagement from './pages/SystemManagement';
 import AdminDashboard from './pages/AdminDashboard';
 import PlatformSettings from './pages/PlatformSettings';
 import TenantDashboard from './pages/TenantDashboard';
+import Roles from './pages/Roles';
+import Staff from './pages/Staff';
+import Brands from './pages/Brands';
+import Reviews from './pages/Reviews';
+import Customers from './pages/Customers';
 import AdminGateways from './pages/AdminGateways';
 import AdminTransactions from './pages/AdminTransactions';
 import AdminModules from './pages/AdminModules';
@@ -26,6 +31,7 @@ import Addons from './pages/Addons';
 import AdminInvoices from './pages/AdminInvoices';
 import AdminThemes from './pages/AdminThemes';
 import AdminSecurity from './pages/AdminSecurity';
+import AdminSupport from './pages/AdminSupport';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -57,6 +63,7 @@ function App() {
         <Route path="invoices" element={<AdminInvoices />} />
         <Route path="themes" element={<AdminThemes />} />
         <Route path="security" element={<AdminSecurity />} />
+        <Route path="support" element={<AdminSupport />} />
       </Route>
 
       {/* Tenant Protected Routes */}
@@ -70,6 +77,11 @@ function App() {
         <Route path="support" element={<Support />} />
         <Route path="builder" element={<ThemeBuilder />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="roles" element={<Roles />} />
+        <Route path="staff" element={<Staff />} />
+        <Route path="brands" element={<Brands />} />
+        <Route path="reviews" element={<Reviews />} />
+        <Route path="customers" element={<Customers />} />
       </Route>
       {/* Fallback route */}
       <Route path="*" element={<Navigate to="/" />} />

@@ -64,6 +64,10 @@ exports.register = async (req, res) => {
         );
         const tenantId = tenantResult.insertId;
 
+        // Seed default system roles
+        const seedSystemRoles = require('../utils/seedRoles');
+        await seedSystemRoles(connection, tenantId);
+
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
