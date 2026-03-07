@@ -138,6 +138,7 @@ const Support = () => {
                             <th style={{ padding: '0.75rem' }}>ID</th>
                             <th style={{ padding: '0.75rem' }}>Subject</th>
                             <th style={{ padding: '0.75rem' }}>Priority</th>
+                            <th style={{ padding: '0.75rem' }}>SLA Deadline</th>
                             <th style={{ padding: '0.75rem' }}>Status</th>
                             <th style={{ padding: '0.75rem' }}>Created</th>
                             <th style={{ padding: '0.75rem' }}>Actions</th>
@@ -145,9 +146,9 @@ const Support = () => {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</td></tr>
+                            <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</td></tr>
                         ) : tickets.length === 0 ? (
-                            <tr><td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No support tickets found.</td></tr>
+                            <tr><td colSpan="7" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No support tickets found.</td></tr>
                         ) : tickets.map(ticket => (
                             <tr key={ticket.id} style={{ borderBottom: '1px solid var(--border)' }}>
                                 <td style={{ padding: '0.75rem', fontFamily: 'monospace' }}>#{ticket.id}</td>
@@ -156,6 +157,9 @@ const Support = () => {
                                     <span style={{ padding: '0.2rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', backgroundColor: priorityColor(ticket.priority).bg, color: priorityColor(ticket.priority).text }}>
                                         {(ticket.priority || 'medium').toUpperCase()}
                                     </span>
+                                </td>
+                                <td style={{ padding: '0.75rem', fontSize: '0.85rem', color: ticket.sla_deadline && new Date(ticket.sla_deadline) < new Date() ? 'red' : 'inherit' }}>
+                                    {ticket.sla_deadline ? new Date(ticket.sla_deadline).toLocaleString() : 'N/A'}
                                 </td>
                                 <td style={{ padding: '0.75rem' }}>
                                     <span className={`badge ${statusColor(ticket.status)}`}>{(ticket.status || 'open').replace('_', ' ')}</span>

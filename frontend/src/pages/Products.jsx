@@ -107,7 +107,17 @@ const Products = () => {
         e.preventDefault();
         try {
             const payload = { ...form };
-            if (!form.has_variants) payload.variants = [];
+            if (!form.has_variants) {
+                payload.variants = [];
+            } else {
+                // Compile b2b_pricing for each variant before saving
+                payload.variants = form.variants.map(v => {
+                    const b2b = [];
+                    if (v.wholesale_price) b2b.push({ tier: 'wholesale', price: parseFloat(v.wholesale_price) });
+                    if (v.vip_price) b2b.push({ tier: 'vip', price: parseFloat(v.vip_price) });
+                    return { ...v, b2b_pricing: b2b };
+                });
+            }
 
             if (editingProduct) {
                 await api.put(`/products/${editingProduct.id}`, payload);
@@ -156,6 +166,15 @@ const Products = () => {
         if (product) {
             setEditingProduct(product);
             const hasVariants = product.variants && product.variants.length > 0;
+
+            // Map b2b_pricing back to flat UI fields if present
+            const mappedVariants = (product.variants || []).map(v => {
+                const b2b = v.b2b_pricing || [];
+                const wholesale = b2b.find(b => b.tier === 'wholesale')?.price || '';
+                const vip = b2b.find(b => b.tier === 'vip')?.price || '';
+                return { ...v, wholesale_price: wholesale, vip_price: vip };
+            });
+
             setForm({
                 name: product.name,
                 description: product.description || '',
@@ -167,7 +186,7 @@ const Products = () => {
                 category_id: product.category_id || '',
                 brand_id: product.brand_id || '',
                 status: product.status,
-                variants: product.variants || [],
+                variants: mappedVariants,
                 has_variants: hasVariants
             });
             // Don't auto-fill optionTypes for now, as it's a generator tool
@@ -192,6 +211,8 @@ const Products = () => {
         const newVariants = combinations.map(combo => ({
             variant_sku: `${form.sku}-${Object.values(combo).join('-')}`,
             price: form.price || 0,
+            wholesale_price: '',
+            vip_price: '',
             stock_quantity: 0,
             attributes_json: combo
         }));
@@ -362,7 +383,9 @@ const Products = () => {
                                                     <tr>
                                                         <th>Variant</th>
                                                         <th>SKU</th>
-                                                        <th>Price</th>
+                                                        <th>Base Price</th>
+                                                        <th>Wholesale Price</th>
+                                                        <th>VIP Price</th>
                                                         <th>Stock</th>
                                                     </tr>
                                                 </thead>
@@ -375,9 +398,19 @@ const Products = () => {
                                                                 vts[idx].variant_sku = e.target.value;
                                                                 setForm({ ...form, variants: vts });
                                                             }} /></td>
-                                                            <td><input className="form-control form-control-sm" type="number" value={v.price} onChange={(e) => {
+                                                            <td><input className="form-control form-control-sm" type="number" step="0.01" value={v.price} onChange={(e) => {
                                                                 const vts = [...form.variants];
                                                                 vts[idx].price = e.target.value;
+                                                                setForm({ ...form, variants: vts });
+                                                            }} /></td>
+                                                            <td><input className="form-control form-control-sm" type="number" step="0.01" placeholder="Optional" value={v.wholesale_price || ''} onChange={(e) => {
+                                                                const vts = [...form.variants];
+                                                                vts[idx].wholesale_price = e.target.value;
+                                                                setForm({ ...form, variants: vts });
+                                                            }} /></td>
+                                                            <td><input className="form-control form-control-sm" type="number" step="0.01" placeholder="Optional" value={v.vip_price || ''} onChange={(e) => {
+                                                                const vts = [...form.variants];
+                                                                vts[idx].vip_price = e.target.value;
                                                                 setForm({ ...form, variants: vts });
                                                             }} /></td>
                                                             <td><input className="form-control form-control-sm" type="number" value={v.stock_quantity} onChange={(e) => {

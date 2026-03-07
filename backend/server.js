@@ -47,6 +47,13 @@ app.use('/api/v1/shipping', require('./routes/shippingRoutes'));
 app.use('/api/v1/brands', require('./routes/brandRoutes'));
 app.use('/api/v1/reviews', require('./routes/reviewRoutes'));
 app.use('/api/v1/customers', require('./routes/customerRoutes'));
+app.use('/api/v1/inventory', require('./routes/inventoryRoutes'));
+app.use('/api/v1/purchases', require('./routes/purchaseRoutes'));
+app.use('/api/v1/accounting', require('./routes/accountingRoutes'));
+app.use('/api/v1/crm', require('./routes/crmRoutes'));
+app.use('/api/v1/marketing-v2', require('./routes/marketingRoutes'));
+app.use('/api/v1/bi', require('./routes/biRoutes'));
+app.use('/api/v1/channels', require('./routes/channelRoutes'));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

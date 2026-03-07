@@ -9,7 +9,8 @@ const Settings = () => {
         store_name: '', currency: 'USD', logo_url: '', seo_title: '', seo_description: '', custom_css: '',
         business_name: '', business_address: '', business_tax_id: '', gst_number: '',
         bank_details: { account_name: '', account_number: '', bank_name: '', routing_number: '' },
-        invoice_template: 'standard'
+        invoice_template: 'standard',
+        smtp_host: '', smtp_port: '', smtp_user: '', smtp_pass: '', smtp_from: ''
     });
 
     const [shippingRules, setShippingRules] = useState([]);
@@ -21,6 +22,8 @@ const Settings = () => {
         fetchData();
     }, []);
 
+
+
     const fetchData = async () => {
         setLoading(true);
         try {
@@ -31,9 +34,15 @@ const Settings = () => {
 
             if (settingsRes.data.data) {
                 const s = settingsRes.data.data;
-                // Safely handle bank_details which might be null from API initially
-                if (!s.bank_details) s.bank_details = { account_name: '', account_number: '', bank_name: '', routing_number: '' };
-                setSettings(s);
+                // Parse builder_layout_json if it's a string to prevent double-stringify
+                if (typeof s.builder_layout_json === 'string') {
+                    try { s.builder_layout_json = JSON.parse(s.builder_layout_json); } catch (e) { s.builder_layout_json = {}; }
+                }
+                setSettings(prev => ({
+                    ...prev,
+                    ...s,
+                    bank_details: s.bank_details ? (typeof s.bank_details === 'string' ? JSON.parse(s.bank_details) : s.bank_details) : prev.bank_details
+                }));
             }
             if (shippingRes.data.data) {
                 setShippingRules(shippingRes.data.data);
@@ -48,11 +57,45 @@ const Settings = () => {
     const handleSaveSettings = async (e) => {
         if (e) e.preventDefault();
         try {
-            await api.post('/settings', settings);
-            alert('Settings updated successfully!');
+            // Sanitize settings to avoid undefined values
+            const payload = { ...settings };
+            Object.keys(payload).forEach(key => {
+                if (payload[key] === undefined) payload[key] = '';
+            });
+
+            await api.post('/settings', payload);
+            window.toast?.success ? window.toast.success('Settings updated!') : alert('Settings updated successfully!');
         } catch (error) {
             console.error('Error saving settings', error);
-            alert('Error saving settings');
+            const msg = error.response?.data?.message || 'Error saving settings';
+            alert(msg);
+        }
+    };
+
+    const [testingSmtp, setTestingSmtp] = useState(false);
+    const [showTestModal, setShowTestModal] = useState(false);
+    const [testEmail, setTestEmail] = useState('');
+    const [testResult, setTestResult] = useState(null);
+
+    const handleTestSMTP = async (e) => {
+        if (e) e.preventDefault();
+        if (!testEmail) { alert('Please enter a recipient email address'); return; }
+        setTestingSmtp(true);
+        setTestResult(null);
+        try {
+            const res = await api.post('/settings/test-smtp', {
+                smtp_host: settings.smtp_host,
+                smtp_port: settings.smtp_port,
+                smtp_user: settings.smtp_user,
+                smtp_pass: settings.smtp_pass,
+                smtp_from: settings.smtp_from,
+                test_email: testEmail
+            });
+            setTestResult({ success: true, message: `Test email sent successfully to ${testEmail}!` });
+        } catch (error) {
+            setTestResult({ success: false, message: error.response?.data?.message || 'SMTP Test Failed' });
+        } finally {
+            setTestingSmtp(false);
         }
     };
 
@@ -96,7 +139,8 @@ const Settings = () => {
         { id: 'tax', label: 'Tax & Legal' },
         { id: 'bank', label: 'Bank Details' },
         { id: 'shipping', label: 'Shipping Rules' },
-        { id: 'invoice', label: 'Invoice Design' }
+        { id: 'invoice', label: 'Invoice Design' },
+        { id: 'smtp', label: 'Email Config' }
     ];
 
     return (
@@ -125,7 +169,14 @@ const Settings = () => {
                 </div>
 
                 {/* Tab Content */}
-                <div className="card" style={{ flex: 1, padding: '2rem' }}>
+                <div className="card" style={{
+                    flex: 1,
+                    padding: '2.5rem',
+                    borderRadius: '20px',
+                    boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
+                    backgroundColor: '#fff',
+                    border: '1px solid #f1f5f9'
+                }}>
                     {/* GENERAL TAB */}
                     {activeTab === 'general' && (
                         <form onSubmit={handleSaveSettings}>
@@ -232,6 +283,60 @@ const Settings = () => {
                         </form>
                     )}
 
+                    {/* SMTP CONFIGURATION */}
+                    {activeTab === 'smtp' && (
+                        <div className="smtp-config">
+                            <div style={{ padding: '0 0.5rem' }}>
+                                <h3 style={{ marginBottom: '0.5rem', color: 'var(--text-main)', fontSize: '1.25rem' }}>Email / SMTP Configuration</h3>
+                                <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                                    Connect your own SMTP server to handle all outgoing platform emails with your custom branding.
+                                </p>
+                            </div>
+
+                            <form onSubmit={handleSaveSettings}>
+                                <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
+                                    <div className="form-group">
+                                        <label style={{ fontWeight: '600', color: '#475569' }}>SMTP Host</label>
+                                        <input className="form-control" type="text" value={settings.smtp_host || ''} onChange={(e) => setSettings({ ...settings, smtp_host: e.target.value })} placeholder="smtp.gmail.com or smtp.mailtrap.io"
+                                            style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.75rem' }} />
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                        <div className="form-group">
+                                            <label style={{ fontWeight: '600', color: '#475569' }}>SMTP Port</label>
+                                            <input className="form-control" type="number" value={settings.smtp_port || ''} onChange={(e) => setSettings({ ...settings, smtp_port: e.target.value })} placeholder="587"
+                                                style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.75rem' }} />
+                                        </div>
+                                        <div className="form-group">
+                                            <label style={{ fontWeight: '600', color: '#475569' }}>From Email Address</label>
+                                            <input className="form-control" type="email" value={settings.smtp_from || ''} onChange={(e) => setSettings({ ...settings, smtp_from: e.target.value })} placeholder="notifications@yourdomain.com"
+                                                style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.75rem' }} />
+                                        </div>
+                                    </div>
+                                    <div className="form-group">
+                                        <label style={{ fontWeight: '600', color: '#475569' }}>SMTP Username</label>
+                                        <input className="form-control" type="text" value={settings.smtp_user || ''} onChange={(e) => setSettings({ ...settings, smtp_user: e.target.value })}
+                                            style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.75rem' }} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label style={{ fontWeight: '600', color: '#475569' }}>SMTP Password</label>
+                                        <input className="form-control" type="password" value={settings.smtp_pass || ''} onChange={(e) => setSettings({ ...settings, smtp_pass: e.target.value })}
+                                            style={{ border: '1px solid #cbd5e1', borderRadius: '8px', padding: '0.75rem' }} />
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+                                    <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem 2rem', borderRadius: '10px', boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.2)' }}>
+                                        Save Configuration
+                                    </button>
+                                    <button type="button" onClick={() => { setTestResult(null); setShowTestModal(true); }} className="btn"
+                                        style={{ padding: '0.75rem 2rem', borderRadius: '10px', backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', fontWeight: '600' }}>
+                                        Test Connection
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
                     {/* SHIPPING RULES */}
                     {activeTab === 'shipping' && (
                         <div>
@@ -304,6 +409,65 @@ const Settings = () => {
                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem' }}>
                                 <button type="button" className="btn" style={{ backgroundColor: '#e5e7eb', color: '#374151' }} onClick={() => setShowShippingModal(false)}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">Save Rule</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* TEST SMTP MODAL */}
+            {showTestModal && (
+                <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+                    <div className="modal-content card" style={{ padding: '2.5rem', width: '480px', backgroundColor: '#fff', borderRadius: '20px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+                        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                            <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', fontSize: '24px' }}>📧</div>
+                            <h3 style={{ margin: 0, fontSize: '1.25rem', color: '#1e293b' }}>Send Test Email</h3>
+                            <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem' }}>Enter the email address to receive a test email from your SMTP server</p>
+                        </div>
+
+                        <form onSubmit={handleTestSMTP}>
+                            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                                <label style={{ fontWeight: '600', color: '#475569', fontSize: '0.85rem', display: 'block', marginBottom: '0.5rem' }}>Recipient Email Address</label>
+                                <input
+                                    className="form-control"
+                                    type="email"
+                                    value={testEmail}
+                                    onChange={(e) => setTestEmail(e.target.value)}
+                                    placeholder="you@example.com"
+                                    required
+                                    autoFocus
+                                    style={{ border: '1px solid #cbd5e1', borderRadius: '10px', padding: '0.85rem 1rem', fontSize: '0.95rem', width: '100%', boxSizing: 'border-box' }}
+                                />
+                            </div>
+
+                            <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '1rem 1.25rem', marginBottom: '1.5rem', border: '1px solid #e2e8f0' }}>
+                                <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>
+                                    <strong>From:</strong> {settings.smtp_from || 'Not configured'}<br />
+                                    <strong>Server:</strong> {settings.smtp_host || 'Not configured'}:{settings.smtp_port || '—'}
+                                </p>
+                            </div>
+
+                            {testResult && (
+                                <div style={{
+                                    padding: '1rem 1.25rem', borderRadius: '10px', marginBottom: '1.5rem',
+                                    background: testResult.success ? '#f0fdf4' : '#fef2f2',
+                                    border: `1px solid ${testResult.success ? '#bbf7d0' : '#fecaca'}`,
+                                    color: testResult.success ? '#166534' : '#991b1b',
+                                    fontSize: '0.9rem'
+                                }}>
+                                    {testResult.success ? '✅ ' : '❌ '}{testResult.message}
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                                <button type="button" className="btn" onClick={() => setShowTestModal(false)}
+                                    style={{ backgroundColor: '#f1f5f9', color: '#475569', padding: '0.75rem 1.5rem', borderRadius: '10px', border: '1px solid #e2e8f0', fontWeight: '600' }}>
+                                    Close
+                                </button>
+                                <button type="submit" disabled={testingSmtp} className="btn btn-primary"
+                                    style={{ padding: '0.75rem 1.5rem', borderRadius: '10px', boxShadow: '0 4px 6px -1px rgba(79, 70, 229, 0.2)', opacity: testingSmtp ? 0.7 : 1 }}>
+                                    {testingSmtp ? '⏳ Sending...' : '📤 Send Test Email'}
+                                </button>
                             </div>
                         </form>
                     </div>

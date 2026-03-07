@@ -20,7 +20,7 @@ exports.getOrders = async (req, res) => {
 
 exports.createOrder = async (req, res) => {
     const tenantId = req.tenantId;
-    const { customer_id, total_amount, items } = req.body;
+    const { customer_id, total_amount, tax_amount, items, source } = req.body;
 
     // Enforce order limits based on active subscription
     try {
@@ -57,9 +57,11 @@ exports.createOrder = async (req, res) => {
     try {
         await connection.beginTransaction();
 
+        const orderSource = source || 'web'; // web, pos, manual
+        const taxAmt = tax_amount || 0.00;
         const [orderResult] = await connection.query(
-            'INSERT INTO orders (tenant_id, customer_id, total_amount, status) VALUES (?, ?, ?, ?)',
-            [tenantId, customer_id, total_amount, 'pending']
+            'INSERT INTO orders (tenant_id, customer_id, total_amount, tax_amount, status, source) VALUES (?, ?, ?, ?, ?, ?)',
+            [tenantId, customer_id, total_amount, taxAmt, 'pending', orderSource]
         );
         const orderId = orderResult.insertId;
 
@@ -174,6 +176,10 @@ exports.generateOrderInvoice = async (req, res) => {
         });
 
         doc.moveDown();
+        if (parseFloat(order.tax_amount) > 0) {
+            doc.fontSize(10).text(`Tax Amount: $${parseFloat(order.tax_amount).toFixed(2)}`, { align: 'right' });
+            doc.moveDown(0.5);
+        }
         doc.fontSize(12).text(`Total Amount: $${parseFloat(order.total_amount).toFixed(2)}`, { align: 'right', bold: true });
         doc.moveDown();
 
@@ -198,5 +204,86 @@ exports.generateOrderInvoice = async (req, res) => {
     } catch (error) {
         console.error('Invoice generation error:', error);
         res.status(500).json({ success: false, message: 'Failed to generate invoice' });
+    }
+};
+
+exports.getBillingDocuments = async (req, res) => {
+    const tenantId = req.tenantId;
+    try {
+        const [rows] = await pool.query(`
+            SELECT b.*, c.name as customer_name, o.id as order_ref 
+            FROM billing_documents b
+            LEFT JOIN customers c ON b.customer_id = c.id
+            LEFT JOIN orders o ON b.order_id = o.id
+            WHERE b.tenant_id = ?
+            ORDER BY b.created_at DESC
+        `, [tenantId]);
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error fetching billing documents' });
+    }
+};
+
+exports.createBillingDocument = async (req, res) => {
+    const tenantId = req.tenantId;
+    const { order_id, customer_id, document_type, document_number, total_amount, due_date, notes } = req.body;
+
+    try {
+        const [result] = await pool.query(`
+            INSERT INTO billing_documents 
+            (tenant_id, order_id, customer_id, document_type, document_number, total_amount, due_date, notes) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `, [tenantId, order_id || null, customer_id, document_type, document_number, total_amount, due_date || null, notes || null]);
+
+        res.status(201).json({ success: true, data: { id: result.insertId, document_number } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error creating billing document: ' + error.message });
+    }
+};
+
+// --- RECURRING INVOICES ---
+
+exports.getRecurringInvoices = async (req, res) => {
+    const tenantId = req.tenantId;
+    try {
+        const [rows] = await pool.query(`
+            SELECT r.*, c.name as customer_name, c.email as customer_email
+            FROM recurring_invoices r
+            LEFT JOIN customers c ON r.customer_id = c.id
+            WHERE r.tenant_id = ?
+            ORDER BY r.next_invoice_date ASC
+        `, [tenantId]);
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error fetching recurring invoices' });
+    }
+};
+
+exports.createRecurringInvoice = async (req, res) => {
+    const tenantId = req.tenantId;
+    const { customer_id, name, frequency, amount, next_invoice_date } = req.body;
+
+    try {
+        const [result] = await pool.query(`
+            INSERT INTO recurring_invoices 
+            (tenant_id, customer_id, name, frequency, amount, next_invoice_date, status) 
+            VALUES (?, ?, ?, ?, ?, ?, 'active')
+        `, [tenantId, customer_id, name, frequency, amount, next_invoice_date]);
+
+        res.status(201).json({ success: true, message: 'Recurring invoice profile created', id: result.insertId });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error creating recurring invoice' });
+    }
+};
+
+exports.updateRecurringInvoiceStatus = async (req, res) => {
+    const tenantId = req.tenantId;
+    const { id } = req.params;
+    const { status } = req.body; // active, paused, cancelled
+    try {
+        await pool.query('UPDATE recurring_invoices SET status = ? WHERE id = ? AND tenant_id = ?', [status, id, tenantId]);
+        res.json({ success: true, message: 'Status updated' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error updating recurring invoice status' });
     }
 };

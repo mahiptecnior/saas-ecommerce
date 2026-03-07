@@ -12,14 +12,15 @@ exports.getCustomers = async (req, res) => {
 
 exports.createCustomer = async (req, res) => {
     const tenantId = req.tenantId;
-    const { name, email, phone, address } = req.body;
+    const { name, email, phone, address, tier } = req.body;
     if (!name || !email) return res.status(400).json({ success: false, message: 'Name and email required' });
     try {
+        const selectedTier = tier || 'retail';
         const [result] = await pool.query(
-            'INSERT INTO customers (tenant_id, name, email, phone, address) VALUES (?, ?, ?, ?, ?)',
-            [tenantId, name, email, phone || null, address || null]
+            'INSERT INTO customers (tenant_id, name, email, phone, address, tier) VALUES (?, ?, ?, ?, ?, ?)',
+            [tenantId, name, email, phone || null, address || null, selectedTier]
         );
-        res.status(201).json({ success: true, data: { id: result.insertId, name, email } });
+        res.status(201).json({ success: true, data: { id: result.insertId, name, email, tier: selectedTier } });
     } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(409).json({ success: false, message: 'Email already exists for this store' });
@@ -31,11 +32,12 @@ exports.createCustomer = async (req, res) => {
 exports.updateCustomer = async (req, res) => {
     const tenantId = req.tenantId;
     const { id } = req.params;
-    const { name, email, phone, address } = req.body;
+    const { name, email, phone, address, tier } = req.body;
     try {
+        const selectedTier = tier || 'retail';
         await pool.query(
-            'UPDATE customers SET name = ?, email = ?, phone = ?, address = ? WHERE id = ? AND tenant_id = ?',
-            [name, email, phone || null, address || null, id, tenantId]
+            'UPDATE customers SET name = ?, email = ?, phone = ?, address = ?, tier = ? WHERE id = ? AND tenant_id = ?',
+            [name, email, phone || null, address || null, selectedTier, id, tenantId]
         );
         res.json({ success: true, message: 'Customer updated' });
     } catch (error) {

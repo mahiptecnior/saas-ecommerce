@@ -5,4 +5,6 @@ const settingsController = require('../controllers/settingsController');
 router.get('/', settingsController.getSettings);
 router.post('/', settingsController.updateSettings);
 
+router.post('/test-smtp', settingsController.testSMTP);
+
 module.exports = router;

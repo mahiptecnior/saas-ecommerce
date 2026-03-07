@@ -9,6 +9,10 @@ import Products from './pages/Products';
 import Orders from './pages/Orders';
 import Marketing from './pages/Marketing';
 import Accounts from './pages/Accounts';
+import CRM from './pages/CRM';
+import FAQ from './pages/FAQ';
+import BI from './pages/BI';
+import Channels from './pages/Channels';
 import Support from './pages/Support';
 import Settings from './pages/Settings';
 import Plans from './pages/Plans';
@@ -23,6 +27,9 @@ import Staff from './pages/Staff';
 import Brands from './pages/Brands';
 import Reviews from './pages/Reviews';
 import Customers from './pages/Customers';
+import Inventory from './pages/Inventory';
+import Purchases from './pages/Purchases';
+import POS from './pages/POS';
 import AdminGateways from './pages/AdminGateways';
 import AdminTransactions from './pages/AdminTransactions';
 import AdminModules from './pages/AdminModules';
@@ -72,8 +79,15 @@ function App() {
         <Route path="products" element={<Products />} />
         <Route path="categories" element={<Categories />} />
         <Route path="orders" element={<Orders />} />
+        <Route path="pos" element={<POS />} />
+        <Route path="inventory" element={<Inventory />} />
+        <Route path="purchases" element={<Purchases />} />
         <Route path="marketing" element={<Marketing />} />
         <Route path="accounts" element={<Accounts />} />
+        <Route path="crm" element={<CRM />} />
+        <Route path="faq" element={<FAQ />} />
+        <Route path="bi" element={<BI />} />
+        <Route path="multi-channel" element={<Channels />} />
         <Route path="support" element={<Support />} />
         <Route path="builder" element={<ThemeBuilder />} />
         <Route path="settings" element={<Settings />} />

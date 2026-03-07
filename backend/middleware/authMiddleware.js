@@ -33,3 +33,18 @@ exports.authorize = (...roles) => {
         next();
     };
 };
+
+/**
+ * Alternative for array-based roles (used in recent ERP modules).
+ */
+exports.authorizeTenantRole = (roles) => {
+    return (req, res, next) => {
+        // req.user.role may be undefined for legacy 'tenant_owner' checks if not set.
+        // We'll treat empty string or 'admin' as high-level access.
+        const userRole = req.user.role || '';
+        if (!roles.includes(userRole) && !roles.includes('')) {
+            return res.status(403).json({ success: false, message: 'Forbidden. Role not authorized.' });
+        }
+        next();
+    };
+};

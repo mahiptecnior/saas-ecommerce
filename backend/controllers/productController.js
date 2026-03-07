@@ -15,7 +15,11 @@ exports.getProducts = async (req, res) => {
                 'variant_sku', pv.variant_sku, 
                 'price', pv.price, 
                 'stock_quantity', pv.stock_quantity, 
-                'attributes_json', pv.attributes_json
+                'attributes_json', pv.attributes_json,
+                'b2b_pricing', (
+                    SELECT JSON_ARRAYAGG(JSON_OBJECT('tier', tier, 'price', price))
+                    FROM b2b_pricing bp WHERE bp.variant_id = pv.id
+                )
             )) FROM product_variants pv WHERE pv.product_id = p.id) as variants
             FROM products p 
             LEFT JOIN brands b ON p.brand_id = b.id 
@@ -64,10 +68,19 @@ exports.createProduct = async (req, res) => {
         // 3. Insert Variants if any
         if (variants && Array.isArray(variants) && variants.length > 0) {
             for (const v of variants) {
-                await connection.query(
+                const [varRes] = await connection.query(
                     'INSERT INTO product_variants (product_id, variant_sku, price, stock_quantity, attributes_json) VALUES (?, ?, ?, ?, ?)',
                     [productId, v.variant_sku || null, v.price || price, v.stock_quantity || 0, JSON.stringify(v.attributes_json || {})]
                 );
+
+                if (v.b2b_pricing && Array.isArray(v.b2b_pricing)) {
+                    for (const bp of v.b2b_pricing) {
+                        await connection.query(
+                            'INSERT INTO b2b_pricing (tenant_id, variant_id, tier, price) VALUES (?, ?, ?, ?)',
+                            [tenantId, varRes.insertId, bp.tier, bp.price]
+                        );
+                    }
+                }
             }
         }
 
@@ -89,7 +102,17 @@ exports.getProduct = async (req, res) => {
 
     try {
         const [rows] = await pool.query(`
-            SELECT p.*, (SELECT JSON_ARRAYAGG(JSON_OBJECT('id', id, 'variant_sku', variant_sku, 'price', price, 'stock_quantity', stock_quantity, 'attributes_json', attributes_json)) FROM product_variants WHERE product_id = p.id) as variants
+            SELECT p.*, (SELECT JSON_ARRAYAGG(JSON_OBJECT(
+                'id', pv.id, 
+                'variant_sku', pv.variant_sku, 
+                'price', pv.price, 
+                'stock_quantity', pv.stock_quantity, 
+                'attributes_json', pv.attributes_json,
+                'b2b_pricing', (
+                    SELECT JSON_ARRAYAGG(JSON_OBJECT('tier', tier, 'price', price))
+                    FROM b2b_pricing bp WHERE bp.variant_id = pv.id
+                )
+            )) FROM product_variants pv WHERE pv.product_id = p.id) as variants
             FROM products p WHERE p.id = ? AND p.tenant_id = ?
         `, [id, tenantId]);
         if (rows.length === 0) return res.status(404).json({ success: false, message: 'Product not found' });
@@ -115,12 +138,22 @@ exports.updateProduct = async (req, res) => {
 
         // Update Variants: Simple Replace strategy for now
         if (variants && Array.isArray(variants)) {
+            // Because of ON DELETE CASCADE, deleting from product_variants will automatically delete from b2b_pricing
             await connection.query('DELETE FROM product_variants WHERE product_id = ?', [id]);
             for (const v of variants) {
-                await connection.query(
+                const [varRes] = await connection.query(
                     'INSERT INTO product_variants (product_id, variant_sku, price, stock_quantity, attributes_json) VALUES (?, ?, ?, ?, ?)',
                     [id, v.variant_sku || null, v.price || price, v.stock_quantity || 0, JSON.stringify(v.attributes_json || {})]
                 );
+
+                if (v.b2b_pricing && Array.isArray(v.b2b_pricing)) {
+                    for (const bp of v.b2b_pricing) {
+                        await connection.query(
+                            'INSERT INTO b2b_pricing (tenant_id, variant_id, tier, price) VALUES (?, ?, ?, ?)',
+                            [tenantId, varRes.insertId, bp.tier, bp.price]
+                        );
+                    }
+                }
             }
         }
 

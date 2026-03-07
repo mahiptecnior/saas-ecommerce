@@ -2,27 +2,41 @@ import React, { useState, useEffect } from 'react';
 import api from '../api/axios';
 
 const Marketing = () => {
+    const [activeTab, setActiveTab] = useState('campaigns');
     const [coupons, setCoupons] = useState([]);
     const [campaigns, setCampaigns] = useState([]);
+    const [affiliates, setAffiliates] = useState([]);
+    const [abandonedCarts, setAbandonedCarts] = useState([]);
     const [loading, setLoading] = useState(true);
+
     const [showCouponModal, setShowCouponModal] = useState(false);
-    const [editCoupon, setEditCoupon] = useState(null);
     const [showCampaignModal, setShowCampaignModal] = useState(false);
+    const [showAffiliateModal, setShowAffiliateModal] = useState(false);
+
     const [couponForm, setCouponForm] = useState({ code: '', discount_type: 'percentage', discount_value: '', expiry_date: '' });
     const [campaignForm, setCampaignForm] = useState({ name: '', type: 'email', message: '' });
+    const [affiliateForm, setAffiliateForm] = useState({ customer_id: '', referral_code: '', commission_rate: '' });
+
     const [msg, setMsg] = useState('');
 
-    useEffect(() => { fetchData(); }, []);
+    useEffect(() => { fetchData(); }, [activeTab]);
 
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [couponsRes, campaignsRes] = await Promise.all([
-                api.get('/modules/marketing/coupons'),
-                api.get('/modules/marketing/campaigns')
-            ]);
-            setCoupons(couponsRes.data.data);
-            setCampaigns(campaignsRes.data.data);
+            if (activeTab === 'campaigns') {
+                const res = await api.get('/modules/marketing/campaigns');
+                setCampaigns(res.data.data);
+            } else if (activeTab === 'coupons') {
+                const res = await api.get('/modules/marketing/coupons');
+                setCoupons(res.data.data);
+            } else if (activeTab === 'affiliates') {
+                const res = await api.get('/marketing-v2/affiliates');
+                setAffiliates(res.data.data);
+            } else if (activeTab === 'abandoned') {
+                const res = await api.get('/marketing-v2/abandoned-carts');
+                setAbandonedCarts(res.data.data);
+            }
         } catch (err) { console.error(err); }
         finally { setLoading(false); }
     };
@@ -30,199 +44,190 @@ const Marketing = () => {
     const handleCreateCoupon = async (e) => {
         e.preventDefault();
         try {
-            if (editCoupon) {
-                await api.put(`/modules/marketing/coupons/${editCoupon.id}`, couponForm);
-                setMsg('Coupon updated!');
-            } else {
-                await api.post('/modules/marketing/coupons', couponForm);
-                setMsg('Coupon created!');
-            }
-            setCouponForm({ code: '', discount_type: 'percentage', discount_value: '', expiry_date: '' });
-            setEditCoupon(null);
+            await api.post('/modules/marketing/coupons', couponForm);
+            setMsg('Coupon created!');
             setShowCouponModal(false);
+            setCouponForm({ code: '', discount_type: 'percentage', discount_value: '', expiry_date: '' });
             fetchData();
         } catch (err) { alert('Error saving coupon'); }
-    };
-
-    const handleDeleteCoupon = async (id) => {
-        if (!confirm('Delete this coupon?')) return;
-        try {
-            await api.delete(`/modules/marketing/coupons/${id}`);
-            setMsg('Coupon deleted.');
-            fetchData();
-        } catch (err) { alert('Error deleting coupon'); }
-    };
-
-    const openEditCoupon = (c) => {
-        setEditCoupon(c);
-        setCouponForm({ code: c.code, discount_type: c.discount_type, discount_value: c.discount_value, expiry_date: c.expiry_date ? c.expiry_date.split('T')[0] : '' });
-        setShowCouponModal(true);
     };
 
     const handleLaunchCampaign = async (e) => {
         e.preventDefault();
         try {
             await api.post('/modules/marketing/campaigns', campaignForm);
-            setMsg(`${campaignForm.type.toUpperCase()} Campaign "${campaignForm.name}" launched! 🚀`);
-            setCampaignForm({ name: '', type: 'email', message: '' });
+            setMsg('Campaign launched! 🚀');
             setShowCampaignModal(false);
+            setCampaignForm({ name: '', type: 'email', message: '' });
             fetchData();
         } catch (err) { alert('Error launching campaign'); }
+    };
+
+    const handleCreateAffiliate = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('/marketing-v2/affiliates', affiliateForm);
+            setMsg('Affiliate profile created!');
+            setShowAffiliateModal(false);
+            setAffiliateForm({ customer_id: '', referral_code: '', commission_rate: '' });
+            fetchData();
+        } catch (err) { alert('Error creating affiliate'); }
     };
 
     return (
         <div className="fade-in">
             {msg && <div style={{ padding: '0.75rem', backgroundColor: 'var(--success)', color: '#fff', borderRadius: '8px', marginBottom: '1rem' }}>{msg} <button onClick={() => setMsg('')} style={{ float: 'right', background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>×</button></div>}
 
-            {/* CAMPAIGNS */}
-            <div className="card" style={{ marginBottom: '2rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h2>Marketing Campaigns</h2>
-                    <button className="btn btn-primary" onClick={() => setShowCampaignModal(true)}>+ New Campaign</button>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1rem' }}>
-                    {[
-                        { type: 'Email', icon: '📧', desc: 'Send newsletter to all customers', color: '#3b82f6' },
-                        { type: 'SMS', icon: '📱', desc: 'Urgent discount alerts via SMS', color: '#10b981' },
-                        { type: 'Push', icon: '🔔', desc: 'Mobile app push alerts', color: '#8b5cf6' }
-                    ].map(c => (
-                        <div key={c.type} className="card" style={{ backgroundColor: 'var(--background)', borderLeft: `4px solid ${c.color}` }}>
-                            <h4>{c.icon} {c.type} Blast</h4>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '0.5rem 0' }}>{c.desc}</p>
-                            <button className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }} onClick={() => { setCampaignForm({ ...campaignForm, type: c.type.toLowerCase() }); setShowCampaignModal(true); }}>Launch</button>
-                        </div>
-                    ))}
-                </div>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)' }}>
+                {['campaigns', 'coupons', 'affiliates', 'abandoned'].map(tab => (
+                    <button
+                        key={tab}
+                        className={`btn ${activeTab === tab ? 'btn-primary' : ''}`}
+                        style={{ backgroundColor: activeTab === tab ? 'var(--primary)' : 'transparent', color: activeTab === tab ? 'white' : 'var(--text)', border: 'none', borderRadius: '4px 4px 0 0', padding: '0.75rem 1.5rem', textTransform: 'capitalize' }}
+                        onClick={() => setActiveTab(tab)}
+                    >
+                        {tab.replace('abandoned', 'Abandoned Carts')}
+                    </button>
+                ))}
             </div>
 
-            {/* CAMPAIGN HISTORY */}
-            {campaigns.length > 0 && (
-                <div className="card" style={{ marginBottom: '2rem' }}>
-                    <h3 style={{ marginBottom: '1rem' }}>📋 Campaign History</h3>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h2 style={{ textTransform: 'capitalize' }}>{activeTab.replace('abandoned', 'Abandoned Carts')}</h2>
+                    {activeTab === 'campaigns' && <button className="btn btn-primary" onClick={() => setShowCampaignModal(true)}>+ New Campaign</button>}
+                    {activeTab === 'coupons' && <button className="btn btn-primary" onClick={() => setShowCouponModal(true)}>+ Create Coupon</button>}
+                    {activeTab === 'affiliates' && <button className="btn btn-primary" onClick={() => setShowAffiliateModal(true)}>+ Register Affiliate</button>}
+                </div>
+
+                {activeTab === 'campaigns' && (
+                    <table className="table">
                         <thead>
-                            <tr style={{ borderBottom: '2px solid var(--border)', textAlign: 'left' }}>
-                                <th style={{ padding: '0.75rem' }}>Name</th>
-                                <th style={{ padding: '0.75rem' }}>Channel</th>
-                                <th style={{ padding: '0.75rem' }}>Status</th>
-                                <th style={{ padding: '0.75rem' }}>Launched</th>
-                            </tr>
+                            <tr><th>Name</th><th>Channel</th><th>Status</th><th>Launched</th></tr>
                         </thead>
                         <tbody>
                             {campaigns.map(c => (
-                                <tr key={c.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                    <td style={{ padding: '0.75rem', fontWeight: '500' }}>{c.name}</td>
-                                    <td style={{ padding: '0.75rem' }}><span className="badge badge-active">{c.type}</span></td>
-                                    <td style={{ padding: '0.75rem' }}><span className="badge badge-pending">{c.status || 'launched'}</span></td>
-                                    <td style={{ padding: '0.75rem', fontSize: '0.85rem' }}>{new Date(c.created_at).toLocaleDateString()}</td>
+                                <tr key={c.id}>
+                                    <td>{c.name}</td>
+                                    <td><span className="badge badge-active">{c.type}</span></td>
+                                    <td><span className="badge badge-pending">{c.status}</span></td>
+                                    <td>{new Date(c.created_at).toLocaleDateString()}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
-                </div>
-            )}
+                )}
 
-            {/* COUPONS */}
-            <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h2>Coupons & Discounts</h2>
-                    <button className="btn btn-primary" onClick={() => setShowCouponModal(true)}>+ Create Coupon</button>
-                </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                        <tr style={{ borderBottom: '2px solid var(--border)', textAlign: 'left' }}>
-                            <th style={{ padding: '0.75rem' }}>Code</th>
-                            <th style={{ padding: '0.75rem' }}>Type</th>
-                            <th style={{ padding: '0.75rem' }}>Value</th>
-                            <th style={{ padding: '0.75rem' }}>Expiry</th>
-                            <th style={{ padding: '0.75rem' }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {loading ? (
-                            <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading...</td></tr>
-                        ) : coupons.length === 0 ? (
-                            <tr><td colSpan="4" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No coupons created yet.</td></tr>
-                        ) : coupons.map(c => (
-                            <tr key={c.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                <td style={{ padding: '0.75rem', fontWeight: '600', fontFamily: 'monospace' }}>{c.code}</td>
-                                <td style={{ padding: '0.75rem' }}><span className="badge badge-active">{c.discount_type}</span></td>
-                                <td style={{ padding: '0.75rem' }}>{c.discount_type === 'percentage' ? `${c.discount_value}%` : `$${c.discount_value}`}</td>
-                                <td style={{ padding: '0.75rem', fontSize: '0.85rem' }}>{c.expiry_date ? new Date(c.expiry_date).toLocaleDateString() : 'No expiry'}</td>
-                                <td style={{ padding: '0.75rem' }}>
-                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
-                                        <button className="btn" onClick={() => openEditCoupon(c)} style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem', backgroundColor: 'var(--surface)', border: '1px solid var(--border)' }}>Edit</button>
-                                        <button className="btn" onClick={() => handleDeleteCoupon(c.id)} style={{ padding: '0.2rem 0.6rem', fontSize: '0.8rem', backgroundColor: 'var(--danger)', color: '#fff' }}>Del</button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                {activeTab === 'coupons' && (
+                    <table className="table">
+                        <thead>
+                            <tr><th>Code</th><th>Type</th><th>Value</th><th>Expiry</th></tr>
+                        </thead>
+                        <tbody>
+                            {coupons.map(c => (
+                                <tr key={c.id}>
+                                    <td style={{ fontWeight: 'bold' }}>{c.code}</td>
+                                    <td>{c.discount_type}</td>
+                                    <td>{c.discount_type === 'percentage' ? `${c.discount_value}%` : `$${c.discount_value}`}</td>
+                                    <td>{c.expiry_date ? new Date(c.expiry_date).toLocaleDateString() : 'Never'}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+
+                {activeTab === 'affiliates' && (
+                    <table className="table">
+                        <thead>
+                            <tr><th>Customer</th><th>Referral Code</th><th>Comm. Rate</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            {affiliates.map(a => (
+                                <tr key={a.id}>
+                                    <td>{a.customer_name || `ID: ${a.customer_id}`}</td>
+                                    <td style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{a.referral_code}</td>
+                                    <td>{a.commission_rate}%</td>
+                                    <td><span className="badge badge-success">{a.status}</span></td>
+                                </tr>
+                            ))}
+                            {affiliates.length === 0 && <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>No affiliates registered.</td></tr>}
+                        </tbody>
+                    </table>
+                )}
+
+                {activeTab === 'abandoned' && (
+                    <table className="table">
+                        <thead>
+                            <tr><th>Customer</th><th>Order Value</th><th>Abandoned Since</th><th>Action</th></tr>
+                        </thead>
+                        <tbody>
+                            {abandonedCarts.map(cart => (
+                                <tr key={cart.id}>
+                                    <td>{cart.customer_name} ({cart.customer_email})</td>
+                                    <td style={{ fontWeight: 'bold' }}>${cart.total_amount}</td>
+                                    <td>{new Date(cart.created_at).toLocaleString()}</td>
+                                    <td><button className="btn btn-sm" style={{ backgroundColor: 'var(--primary)', color: 'white' }}>Send Recovery Email</button></td>
+                                </tr>
+                            ))}
+                            {abandonedCarts.length === 0 && <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>No abandoned carts found (older than 24h).</td></tr>}
+                        </tbody>
+                    </table>
+                )}
             </div>
 
-            {/* COUPON MODAL */}
+            {/* MODALS (Reusable logic from previous version) */}
             {showCouponModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div className="card" style={{ width: '450px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                            <h3>Create Coupon</h3>
-                            <button onClick={() => setShowCouponModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
-                        </div>
-                        <form onSubmit={handleCreateCoupon} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem' }}>Coupon Code</label>
-                                <input className="input-field" value={couponForm.code} onChange={e => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })} required placeholder="e.g. WELCOME10" />
+                    <div className="card" style={{ width: '400px' }}>
+                        <h3>Create Coupon</h3>
+                        <form onSubmit={handleCreateCoupon} style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <input className="form-control" placeholder="CODE" value={couponForm.code} onChange={e => setCouponForm({ ...couponForm, code: e.target.value.toUpperCase() })} required />
+                            <select className="form-control" value={couponForm.discount_type} onChange={e => setCouponForm({ ...couponForm, discount_type: e.target.value })}>
+                                <option value="percentage">Percentage (%)</option>
+                                <option value="fixed">Fixed Amount ($)</option>
+                            </select>
+                            <input className="form-control" type="number" placeholder="Value" value={couponForm.discount_value} onChange={e => setCouponForm({ ...couponForm, discount_value: e.target.value })} required />
+                            <input className="form-control" type="date" value={couponForm.expiry_date} onChange={e => setCouponForm({ ...couponForm, expiry_date: e.target.value })} />
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <button type="button" className="btn" onClick={() => setShowCouponModal(false)} style={{ flex: 1 }}>Cancel</button>
+                                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Save</button>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem' }}>Type</label>
-                                    <select className="input-field" value={couponForm.discount_type} onChange={e => setCouponForm({ ...couponForm, discount_type: e.target.value })}>
-                                        <option value="percentage">Percentage (%)</option>
-                                        <option value="fixed">Fixed ($)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem' }}>Value</label>
-                                    <input className="input-field" type="number" value={couponForm.discount_value} onChange={e => setCouponForm({ ...couponForm, discount_value: e.target.value })} required placeholder="10" />
-                                </div>
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem' }}>Expiry Date (optional)</label>
-                                <input className="input-field" type="date" value={couponForm.expiry_date} onChange={e => setCouponForm({ ...couponForm, expiry_date: e.target.value })} />
-                            </div>
-                            <button type="submit" className="btn btn-primary">Create Coupon</button>
                         </form>
                     </div>
                 </div>
             )}
 
-            {/* CAMPAIGN MODAL */}
+            {showAffiliateModal && (
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+                    <div className="card" style={{ width: '400px' }}>
+                        <h3>Register Affiliate</h3>
+                        <form onSubmit={handleCreateAffiliate} style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <input className="form-control" placeholder="Customer ID" value={affiliateForm.customer_id} onChange={e => setAffiliateForm({ ...affiliateForm, customer_id: e.target.value })} required />
+                            <input className="form-control" placeholder="Referral Code (e.g. PARTNER20)" value={affiliateForm.referral_code} onChange={e => setAffiliateForm({ ...affiliateForm, referral_code: e.target.value })} required />
+                            <input className="form-control" type="number" placeholder="Commission Rate (%)" value={affiliateForm.commission_rate} onChange={e => setAffiliateForm({ ...affiliateForm, commission_rate: e.target.value })} required />
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <button type="button" className="btn" onClick={() => setShowAffiliateModal(false)} style={{ flex: 1 }}>Cancel</button>
+                                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Register</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {showCampaignModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
                     <div className="card" style={{ width: '450px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                            <h3>Launch Campaign</h3>
-                            <button onClick={() => setShowCampaignModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.5rem' }}>&times;</button>
-                        </div>
-                        <form onSubmit={handleLaunchCampaign} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem' }}>Campaign Name</label>
-                                <input className="input-field" value={campaignForm.name} onChange={e => setCampaignForm({ ...campaignForm, name: e.target.value })} required placeholder="Summer Sale 2026" />
+                        <h3>Launch Campaign</h3>
+                        <form onSubmit={handleLaunchCampaign} style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <input className="form-control" placeholder="Campaign Name" value={campaignForm.name} onChange={e => setCampaignForm({ ...campaignForm, name: e.target.value })} required />
+                            <select className="form-control" value={campaignForm.type} onChange={e => setCampaignForm({ ...campaignForm, type: e.target.value })}>
+                                <option value="email">Email</option>
+                                <option value="sms">SMS</option>
+                            </select>
+                            <textarea className="form-control" placeholder="Message" value={campaignForm.message} onChange={e => setCampaignForm({ ...campaignForm, message: e.target.value })} required rows="3" />
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <button type="button" className="btn" onClick={() => setShowCampaignModal(false)} style={{ flex: 1 }}>Cancel</button>
+                                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Launch 🚀</button>
                             </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem' }}>Channel</label>
-                                <select className="input-field" value={campaignForm.type} onChange={e => setCampaignForm({ ...campaignForm, type: e.target.value })}>
-                                    <option value="email">📧 Email</option>
-                                    <option value="sms">📱 SMS</option>
-                                    <option value="push">🔔 Push Notification</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '0.3rem' }}>Message</label>
-                                <textarea className="input-field" rows="3" value={campaignForm.message} onChange={e => setCampaignForm({ ...campaignForm, message: e.target.value })} required placeholder="Write your campaign message..." />
-                            </div>
-                            <button type="submit" className="btn btn-primary">🚀 Launch Campaign</button>
                         </form>
                     </div>
                 </div>

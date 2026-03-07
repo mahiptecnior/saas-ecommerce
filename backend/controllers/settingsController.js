@@ -35,36 +35,50 @@ exports.updateSettings = async (req, res) => {
     const tenantId = req.tenantId;
     const {
         store_name, currency, logo_url, seo_title, seo_description, custom_css, builder_layout_json,
-        business_name, business_address, business_tax_id, gst_number, bank_details, invoice_template
+        business_name, business_address, business_tax_id, gst_number, bank_details, invoice_template,
+        smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from
     } = req.body;
 
-    const connection = await pool.getConnection();
     try {
-        await connection.beginTransaction();
+        // 1. Update store_settings
+        const layoutJson = JSON.stringify(builder_layout_json || {});
+        const parsedSmtpPort = (smtp_port && !isNaN(smtp_port)) ? parseInt(smtp_port) : null;
 
-        // Update standard store settings
-        await connection.query(
-            'INSERT INTO store_settings (tenant_id, store_name, currency, logo_url, seo_title, seo_description, custom_css, builder_layout_json) ' +
-            'VALUES (?, ?, ?, ?, ?, ?, ?, ?) ' +
-            'ON DUPLICATE KEY UPDATE store_name=?, currency=?, logo_url=?, seo_title=?, seo_description=?, custom_css=?, builder_layout_json=?',
-            [tenantId, store_name, currency, logo_url, seo_title, seo_description, custom_css, JSON.stringify(builder_layout_json),
-                store_name, currency, logo_url, seo_title, seo_description, custom_css, JSON.stringify(builder_layout_json)]
+        const storeParams = [
+            tenantId, store_name || '', currency || 'USD', logo_url || '', seo_title || '', seo_description || '', custom_css || '', layoutJson, smtp_host || null, parsedSmtpPort, smtp_user || null, smtp_pass || null, smtp_from || null, // INSERT
+            store_name || '', currency || 'USD', logo_url || '', seo_title || '', seo_description || '', custom_css || '', layoutJson, smtp_host || null, parsedSmtpPort, smtp_user || null, smtp_pass || null, smtp_from || null // UPDATE
+        ];
+
+        await pool.query(
+            `INSERT INTO store_settings (tenant_id, store_name, currency, logo_url, seo_title, seo_description, custom_css, builder_layout_json, smtp_host, smtp_port, smtp_user, smtp_pass, smtp_from) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) 
+             ON DUPLICATE KEY UPDATE 
+                store_name=?, currency=?, logo_url=?, seo_title=?, seo_description=?, custom_css=?, builder_layout_json=?, smtp_host=?, smtp_port=?, smtp_user=?, smtp_pass=?, smtp_from=?`,
+            storeParams
         );
 
-        // Update tenant business details
+        // 2. Update tenants table for business details
         let bankDetailsJson = bank_details ? JSON.stringify(bank_details) : null;
-        await connection.query(
+        await pool.query(
             'UPDATE tenants SET business_name=?, business_address=?, business_tax_id=?, gst_number=?, bank_details=?, invoice_template=? WHERE id=?',
-            [business_name, business_address, business_tax_id, gst_number, bankDetailsJson, invoice_template || 'standard', tenantId]
+            [business_name || '', business_address || '', business_tax_id || '', gst_number || '', bankDetailsJson, invoice_template || 'standard', tenantId]
         );
 
-        await connection.commit();
         res.json({ success: true, message: 'Settings and Business Profile updated' });
     } catch (error) {
-        await connection.rollback();
-        console.error("Settings Update Error", error);
-        res.status(500).json({ success: false, message: 'Error updating settings' });
-    } finally {
-        connection.release();
+        console.error("Settings Update Error:", error);
+        res.status(500).json({ success: false, message: 'Error updating settings: ' + error.message });
+    }
+};
+
+const mailService = require('../utils/mailService');
+
+exports.testSMTP = async (req, res) => {
+    try {
+        const config = req.body;
+        const result = await mailService.testSMTP(config);
+        res.json({ success: true, message: 'SMTP connection verified and test email sent!', data: result });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'SMTP Test Failed: ' + error.message });
     }
 };
