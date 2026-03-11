@@ -12,7 +12,13 @@ exports.getCategories = async (req, res) => {
 
 exports.createCategory = async (req, res) => {
     const tenantId = req.tenantId;
-    const { name, slug, parent_id } = req.body;
+    const { name, parent_id } = req.body;
+    let { slug } = req.body;
+
+    if (!slug && name) {
+        slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    }
+
     try {
         const [result] = await pool.query(
             'INSERT INTO categories (tenant_id, name, slug, parent_id) VALUES (?, ?, ?, ?)',

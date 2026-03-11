@@ -206,7 +206,7 @@ exports.updateTicketStatus = async (req, res) => {
 exports.getAllTickets = async (req, res) => {
     try {
         const [rows] = await pool.query(`
-            SELECT t.*, tn.store_name 
+            SELECT t.*, tn.name as store_name 
             FROM tickets t
             JOIN tenants tn ON t.tenant_id = tn.id
             ORDER BY t.created_at DESC

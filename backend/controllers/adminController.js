@@ -234,7 +234,7 @@ exports.getAnalytics = async (req, res) => {
             `SELECT COUNT(*) as count FROM subscriptions WHERE status = 'expired' AND updated_at >= DATE_FORMAT(CURDATE(), '%Y-%m-01')`
         );
         const [totalSubsStart] = await pool.query(
-            `SELECT COUNT(*) as count FROM subscriptions WHERE created_at < DATE_FORMAT(CURDATE(), '%Y-%m-01')`
+            `SELECT COUNT(*) as count FROM subscriptions WHERE start_date < DATE_FORMAT(CURDATE(), '%Y-%m-01')`
         );
         const churnRate = totalSubsStart[0].count > 0
             ? ((churnExpired[0].count / totalSubsStart[0].count) * 100).toFixed(1)
